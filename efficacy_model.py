@@ -3,7 +3,7 @@ import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
-
+plt.rcParams['text.usetex'] = True
 import mdp_algms
 
 #%%
@@ -72,7 +72,7 @@ def get_transition_prob(states, efficacy):
 reward_func, reward_func_last = get_reward_functions(states, reward_pass, reward_fail, reward_shirk, 
                                                      reward_completed, effort_work)
 T = get_transition_prob(states, efficacy)
-V_opt, policy_opt, Q_values = find_optimal_policy(states, actions, horizon, discount_factor, 
+V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(states, actions, horizon, discount_factor, 
                               reward_func, reward_func_last, T)
 
 # plots of policies and values
@@ -86,7 +86,7 @@ for i_state, state in enumerate(states):
     
     for i_action, action in enumerate(actions[i_state]):
         
-        plt.plot(Q_values[i_state][i_action, :], label = 'Q'+action, marker = i_state+4, linestyle = '--')
+        plt.plot(Q_values[i_state][i_action, :], label = r'Q'+action, marker = i_state+4, linestyle = '--')
     
     #plt.title('state = %d'%state)    
     plt.legend()
@@ -112,7 +112,7 @@ for i_efficacy, efficacy in enumerate(efficacys):
     reward_func, reward_func_last = get_reward_functions(states, reward_pass, reward_fail, reward_shirk, 
                                                          reward_completed, effort_work)
     T = get_transition_prob(states, efficacy)
-    V_opt, policy_opt, Q_values = find_optimal_policy(states, actions, horizon, discount_factor, 
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(states, actions, horizon, discount_factor, 
                                   reward_func, reward_func_last, T)
     
     for i_state in range(N_intermediate_states+1):
@@ -155,7 +155,7 @@ for i_effort, effort_work in enumerate(efforts):
     reward_func, reward_func_last = get_reward_functions(states, reward_pass, reward_fail, reward_shirk,
                                                          reward_completed, effort_work)
     T = get_transition_prob(states, efficacy)
-    V_opt, policy_opt, Q_values = find_optimal_policy(states, actions, horizon, discount_factor, 
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(states, actions, horizon, discount_factor, 
                                   reward_func, reward_func_last, T)
     
     for i_state in range(N_intermediate_states+1):
@@ -197,17 +197,17 @@ for i_efficacy, efficacy in enumerate(efficacys):
     reward_func, reward_func_last = get_reward_functions(states, reward_pass, reward_fail, reward_shirk, 
                                                          reward_completed, effort_work)
     T = get_transition_prob(states, efficacy)
-    V_opt, policy_opt, Q_values = find_optimal_policy(states, actions, horizon, discount_factor, 
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(states, actions, horizon, discount_factor, 
                                   reward_func, reward_func_last, T)
     
     # run forward (N_runs no. of times), count number of times task is finished for each policy
     initial_state = 0
     for i in range(N_runs):
          
-        s, a, v = forward_runs(policy_opt, V_opt, initial_state, horizon, states, T)
+        s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, horizon, states, T)
         if s[-1] == len(states)-1: count_opt[i_efficacy,0] +=1
         
-        s, a, v = forward_runs(policy_always_work, V_opt, initial_state, horizon, states, T)
+        s, a, v = mdp_algms.forward_runs(policy_always_work, V_opt, initial_state, horizon, states, T)
         if s[-1] == len(states)-1: count_always_work[i_efficacy,0] +=1
 
 plt.figure(figsize=(8,6))

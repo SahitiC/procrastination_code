@@ -73,7 +73,7 @@ ACTIONS[-1] =  ['done'] # actions for final state
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR_REWARD = 0.9 # discounting factor for rewards
-DISCOUNT_FACTOR_COST = 0.9 # discounting factor for costs
+DISCOUNT_FACTOR_COST = 0.7 # discounting factor for costs
 DISCOUNT_FACTOR_COMMON = 0.9 # common discount factor for both 
 EFFICACY = 0.7 # self-efficacy (probability of progress on working)
 
@@ -126,11 +126,13 @@ V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy( STATES, ACTIONS, HO
 
 #%%
 # changing relative discounts, plot
-discounts_reward = np.array([0.8, 0.65, 0.5]) 
+discounts_cost = np.array([0.8, 0.7, 0.6, 0.5]) 
 
 colors = plt.cm.Blues(np.linspace(0.3,0.9,4)) 
-plt.figure(figsize = (8,6))
-for i_d_r, discount_factor_reward in enumerate(discounts_reward):
+fig1, axs1 = plt.subplots(figsize = (8,6))
+fig2, axs2 = plt.subplots(figsize = (8,6))
+
+for i_d_r, discount_factor_cost in enumerate(discounts_cost):
     
     reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( 
     STATES, REWARD_DO, EFFORT_DO, REWARD_COMPLETED, COST_COMPLETED )
@@ -138,22 +140,40 @@ for i_d_r, discount_factor_reward in enumerate(discounts_reward):
     T = get_transition_prob(STATES, EFFICACY)
     
     V_opt_full, policy_opt_full, Q_values_full = mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
-                                       HORIZON, discount_factor_reward, DISCOUNT_FACTOR_COST, 
+                                       HORIZON, DISCOUNT_FACTOR_REWARD, discount_factor_cost, 
                                        reward_func, cost_func, reward_func_last, cost_func_last, T )
     
     v_opt_real = np.array([V_opt_full[HORIZON-1-i][:][:, i] for i in range(HORIZON)]) # the real optimal returns for each timestep and state
     q_val_real = np.array([Q_values_full[HORIZON-1-i][0][:, i] for i in range(HORIZON)]) # real returns for both options in state=0
+    effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
     
     work = np.full(HORIZON, np.nan)
     for i in range(HORIZON):
         
         #policy_opt_full[HORIZON-1-i][0, :-1]-policy_opt_full[HORIZON-1-i][0, 1:] == 1 , w[0]+1
-        w = np.where(policy_opt_full[HORIZON-1-i][0, 1:]-policy_opt_full[HORIZON-1-i][0, :-1] == 1)[0]
-        if w.size > 0 : work[i] = w[0] 
+        w = np.where(policy_opt_full[HORIZON-1-i][0, :-1]-policy_opt_full[HORIZON-1-i][0, 1:] == 1)[0]
+        if w.size > 0 : work[i] = w[0] + 1
     
-    plt.plot(work, label = f"$\gamma_c$ = {DISCOUNT_FACTOR_COST}, $\gamma_r$ = {discount_factor_reward}", color = colors[i_d_r], linestyle = '--')
- 
-plt.hlines( np.where(policy_opt[0, :] == 0)[0][0], 0, 9, label = f"$\gamma_r$ = $\gamma_c$ = {DISCOUNT_FACTOR_COMMON}", color = 'tab:red')
-plt.xlabel('timesteps')
-plt.ylabel('optimal time to stop working')
-plt.legend(loc = 'center right')
+    axs1.plot(work, label = f"$\gamma_c$ = {discount_factor_cost}, $\gamma_r$ = {DISCOUNT_FACTOR_REWARD}", color = colors[i_d_r], linestyle = '--')
+    axs2.plot(effective_policy, label = f"$\gamma_c$ = {discount_factor_cost}, $\gamma_r$ = {DISCOUNT_FACTOR_REWARD}", color = colors[i_d_r], linestyle = '--')
+
+axs1.hlines( np.where(policy_opt[0, :] == 0)[0][0], 0, 9, label = f"$\gamma_r$ = $\gamma_c$ = {DISCOUNT_FACTOR_COMMON}", color = 'tab:red')
+axs1.set_xlabel('timesteps')
+axs1.set_ylabel('optimal time to start working')
+axs1.legend(loc = 'center right')
+
+axs2.plot(policy_opt[0,:], label = f"$\gamma_r$ = $\gamma_c$ = {DISCOUNT_FACTOR_COMMON}", color = 'tab:red', linestyle = '--')
+axs2.set_xlabel('timesteps')
+axs2.set_ylabel('effective policy')
+axs2.set_yticks([0, 1])
+axs2.set_yticklabels(['DO', 'DON\'T'])
+axs2.legend(loc = 'center left')
+
+#%%
+# lebouc pessiglione policy : compare value of doing now vs some other point in the future : make this into a function
+policy = []
+for current_timestep in range(HORIZON):
+    delays = np.arange(0, HORIZON-current_timestep, 1) 
+    value = REWARD_DO * (DISCOUNT_FACTOR_REWARD**delays) - EFFORT_DO * (DISCOUNT_FACTOR_COST**delays)
+    print(value)
+    policy.append(np.argmax(value)) # when to do task

@@ -12,6 +12,7 @@ mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
+import matplotlib.patches as mpatches
 import mdp_algms
 
 #%%
@@ -53,15 +54,15 @@ ACTIONS.append(['completed'])
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 0.9 # discounting factor
-EFFICACY = 0.8 # self-efficacy (probability of progress on working) in non-start/finished state
+EFFICACY = 0.5 # self-efficacy (probability of progress on working) in non-start/finished state
 DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 
 # utilities :
 REWARD_PASS = 4.0 
-REWARD_FAIL = -4.0
+REWARD_FAIL = -0.6
 REWARD_SHIRK = 0.5
 EFFORT_TRY = -0.1 # effort to check 
-EFFORT_WORK = [-0.1, -5.0] # effort to complete task from one of the difficulty states
+EFFORT_WORK = [-0.2, -1.0] # effort to complete task from one of the difficulty states
 EFFORT_SHIRK = -0 
 REWARD_COMPLETED = REWARD_SHIRK
 
@@ -84,3 +85,25 @@ reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD
                                                      REWARD_COMPLETED, EFFORT_TRY, EFFORT_WORK, EFFORT_SHIRK)
 V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                               reward_func, reward_func_last, T)
+
+# plots of policies and values
+colors = plt.cm.Blues(np.linspace(0.4,0.9,len(STATES)))
+lines = ['--', ':']
+fig, axs = plt.subplots( figsize = (8, 6) )
+for i_state, state in enumerate(STATES):
+    
+    #plt.figure( figsize = (8, 6) )
+    
+    axs.plot(V_opt[i_state], color = colors[i_state], marker = 'o', linestyle = 'None', label = f'$V^*({i_state})$',)
+    #plt.plot(policy_opt[i_state], label = 'policy*')
+    
+    for i_action, action in enumerate(ACTIONS[i_state]):
+        
+        axs.plot(Q_values[i_state][i_action, :], color = colors[i_state], linestyle = lines[i_action])
+        
+handles, labels = axs.get_legend_handles_labels()   
+handles.append(plt.plot([], [], color = 'black', linestyle = '--', label = '$Q(a=$ check or work$)$'))
+handles.append(plt.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=$ shirk$)$'))
+plt.legend()
+
+plt.xlabel('timesteps')

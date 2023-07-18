@@ -12,7 +12,6 @@ mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
-import matplotlib.patches as mpatches
 import mdp_algms
 
 #%%
@@ -38,8 +37,20 @@ def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_
 
     reward_func_last.append(reward_pass) 
     
-    return np.array(reward_func), np.array(reward_func_last)
+    return np.array(reward_func, dtype=object), np.array(reward_func_last, dtype=object)
 
+def get_transition_prob(states, efficacy, difficulty_probability):
+    
+    T = []
+    T.append( [ np.array([0, difficulty_probability[0], difficulty_probability[1], 0]), 
+                np.array([1, 0, 0, 0]) ] ) # transitions for check, shirk in start state
+    T.append( [ np.array([0, 1-efficacy, 0, efficacy]), 
+                np.array([0, 1, 0, 0]) ] ) # transitions for work, shirk
+    T.append( [ np.array([0, 0, 1-efficacy, efficacy]), 
+                np.array([0, 0, 1, 0]) ] ) # transitions for work, shirk
+    T.append( [ np.array([0, 0, 0, 1]) ] ) # transitions for completed
+    
+    return np.array(T, dtype=object)
 
 #%%
 # initialising MDP
@@ -59,23 +70,15 @@ DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 
 # utilities :
 REWARD_PASS = 4.0 
-REWARD_FAIL = -0.6
+REWARD_FAIL = -4.0
 REWARD_SHIRK = 0.5
 EFFORT_TRY = -0.1 # effort to check 
-EFFORT_WORK = [-0.2, -1.0] # effort to complete task from one of the difficulty states
+EFFORT_WORK = [-0.2, -0.5] # effort to complete task from one of the difficulty states
 EFFORT_SHIRK = -0 
 REWARD_COMPLETED = REWARD_SHIRK
 
 # transition function for each state:
-T = []
-T.append( [ np.array([0, DIFFICULTY_PROBABILITY[0], DIFFICULTY_PROBABILITY[1], 0]), 
-            np.array([1, 0, 0, 0]) ] ) # transitions for check, shirk in start state
-T.append( [ np.array([0, 1-EFFICACY, 0, EFFICACY]), 
-            np.array([0, 1, 0, 0]) ] ) # transitions for work, shirk
-T.append( [ np.array([0, 0, 1-EFFICACY, EFFICACY]), 
-            np.array([0, 0, 1, 0]) ] ) # transitions for work, shirk
-T.append( [ np.array([0, 0, 0, 1]) ] ) # transitions for completed
-T = np.array(T)
+
 
 
 #%%
@@ -83,6 +86,7 @@ T = np.array(T)
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_TRY, EFFORT_WORK, EFFORT_SHIRK)
+T = get_transition_prob(STATES, EFFICACY, DIFFICULTY_PROBABILITY)
 V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                               reward_func, reward_func_last, T)
 
@@ -107,3 +111,39 @@ handles.append(plt.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=
 plt.legend()
 
 plt.xlabel('timesteps')
+
+#%%
+
+# solving for policies for a range of efforts
+probabilities = np.linspace(0.0, 1.0, 5)
+# optimal starting point for 4 reward regimes (change manually)
+start_works = np.full( (len(probabilities), N_DIFFICULTY_STATES+1), np.nan ) 
+
+for i_prob, difficulty_probability in enumerate(probabilities):
+
+    reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
+                                                         REWARD_COMPLETED, EFFORT_TRY, EFFORT_WORK, EFFORT_SHIRK)
+    
+    T = get_transition_prob(STATES, EFFICACY, [difficulty_probability, 1-difficulty_probability])
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
+                                  reward_func, reward_func_last, T)
+    
+    for i_state in range(N_DIFFICULTY_STATES+1):
+        
+        # find timepoints where it is optimal to work (when task not completed, state=0)
+        start_work = np.where( policy_opt[i_state, :] == 0 )[0]
+        
+        if len(start_work) > 0 :
+            start_works[i_prob, i_state] = start_work[0] # first time to start working
+            #print( policy_opt[0, :])
+            
+plt.figure(figsize=(8,6))   
+colors = plt.cm.Blues(np.linspace(0.4,0.9,N_DIFFICULTY_STATES+1))         
+for i_state in range(N_DIFFICULTY_STATES+1):
+    
+    plt.plot(probabilities, start_works[:, i_state], label = f'state = {i_state}', color = colors[i_state])
+    
+plt.xlabel('probability of task being easy')
+plt.ylabel('time to start work/ check')
+plt.legend()
+plt.title(f'efficacy = {EFFICACY}')

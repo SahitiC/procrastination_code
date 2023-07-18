@@ -1,3 +1,11 @@
+"""
+script for mdp for assignment submission: There is an initial state (when assignment is not started),
+potential intermediate states, and final state of completion. At each non-completed state, there is a choice
+between actions to WORK which has an immediate effort cost and SHIRK which has an immediate reward. 
+The final state is absorbing and also has a reward (equivalent to rewards from shirk). The outcome from evaluation 
+only comes at the deadline (which can be negative to positive based on state at final timepoint).  
+"""
+
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
@@ -9,7 +17,6 @@ import mdp_algms
 
 #%%
 
-# construct reward functions
 # construct reward functions
 def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_completed, effort_work, effort_shirk):
     
@@ -43,11 +50,6 @@ def get_transition_prob(states, efficacy):
     return np.array(T)
 
 #%%
-# initialising mdp for assignment submission: There is an initial state (when assignment is not started),
-# potential intermediate states, and final state of completion. At each non-completed state, there is a choice
-# between actions to WORK which has an immediate effort cost and SHIRK which has an immediate reward. 
-# The final state is absorbing and also has a reward (equivalent to rewards from shirk). The outcome from evaluation 
-# only comes at the deadline (which can be negative to positive based on state at final timepoint).  
 
 # states of markov chain
 N_INTERMEDIATE_STATES = 1
@@ -60,7 +62,7 @@ ACTIONS[-1] =  ['completed'] # actions for final state
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 0.9 # discounting factor
-EFFICACY = 0.9 # self-efficacy (probability of progress on working)
+EFFICACY = 0.6 # self-efficacy (probability of progress on working)
 
 # utilities :
 REWARD_PASS = 4.0 

@@ -93,6 +93,8 @@ V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff
                                               HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, 
                                               reward_func, cost_func, reward_func_last, cost_func_last, T )
 
+effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
+
 #%%
 ### THIS WORKS ONLY FOR A SMALL MDP WHERE ONLY ONE STATE HAS TWO CHOICES OF ACTIONS WITH A SMALL HORIZON ###
 
@@ -170,10 +172,11 @@ axs2.set_yticklabels(['DO', 'DON\'T'])
 axs2.legend(loc = 'center left')
 
 #%%
-# lebouc pessiglione policy : compare value of doing now vs some other point in the future : make this into a function
-policy = []
+# make into a function
+# lebouc pessiglione policy : compare value of doing now vs some other point in the future : dynamic?
+policy_lebouc = []
 for current_timestep in range(HORIZON):
     delays = np.arange(0, HORIZON-current_timestep, 1) 
-    value = REWARD_DO * (DISCOUNT_FACTOR_REWARD**delays) - EFFORT_DO * (DISCOUNT_FACTOR_COST**delays)
+    value = REWARD_DO * (DISCOUNT_FACTOR_REWARD**delays) + EFFORT_DO * (DISCOUNT_FACTOR_COST**delays) # effort do is negative
     print(value)
-    policy.append(np.argmax(value)) # when to do task
+    policy_lebouc.append(np.argmax(value)+current_timestep) # when to do task

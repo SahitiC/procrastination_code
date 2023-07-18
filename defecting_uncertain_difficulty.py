@@ -42,7 +42,7 @@ def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_
 
 
 #%%
-# initialising MDP
+# instantiating MDP
 
 # states of markov chain
 N_DIFFICULTY_STATES = 2 # number of states of difficulty

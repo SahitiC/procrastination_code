@@ -58,6 +58,16 @@ def get_transition_prob(states, efficacy):
     
     return T
 
+def lebouc_policy(horizon, discount_factor_reward, discount_factor_cost, 
+                  reward_do, effort_do):
+    # lebouc pessiglione policy : compare value of doing now vs some other point in the future
+    
+    policy = []
+    for current_timestep in range(horizon):
+        delays = np.arange(0, horizon-current_timestep, 1) 
+        value = reward_do * (discount_factor_reward**delays) + effort_do * (discount_factor_cost**delays)
+        policy.append(np.argmax(value)+current_timestep) # when to do task
+    return np.array(policy)
 
 #%%
 # setting up the MDP     
@@ -73,12 +83,12 @@ ACTIONS[-1] =  ['done'] # actions for final state
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR_REWARD = 0.9 # discounting factor for rewards
-DISCOUNT_FACTOR_COST = 0.7 # discounting factor for costs
+DISCOUNT_FACTOR_COST = 0.5 # discounting factor for costs
 DISCOUNT_FACTOR_COMMON = 0.9 # common discount factor for both 
 EFFICACY = 0.7 # self-efficacy (probability of progress on working)
 
 # utilities :
-REWARD_DO = 1.5
+REWARD_DO = 3.5
 EFFORT_DO = -1.0
 REWARD_COMPLETED = 0.0
 COST_COMPLETED = -0.0
@@ -172,11 +182,18 @@ axs2.set_yticklabels(['DO', 'DON\'T'])
 axs2.legend(loc = 'center left')
 
 #%%
-# make into a function
-# lebouc pessiglione policy : compare value of doing now vs some other point in the future : dynamic?
-policy_lebouc = []
-for current_timestep in range(HORIZON):
-    delays = np.arange(0, HORIZON-current_timestep, 1) 
-    value = REWARD_DO * (DISCOUNT_FACTOR_REWARD**delays) + EFFORT_DO * (DISCOUNT_FACTOR_COST**delays) # effort do is negative
-    print(value)
-    policy_lebouc.append(np.argmax(value)+current_timestep) # when to do task
+
+discounts_cost = np.array([0.8, 0.7, 0.6, 0.5]) 
+
+colors = plt.cm.Blues(np.linspace(0.3,0.9,4)) 
+fig1, axs1 = plt.subplots(figsize = (8,6))
+
+for i_d_r, discount_factor_cost in enumerate(discounts_cost):
+    
+    policy = lebouc_policy(HORIZON, DISCOUNT_FACTOR_REWARD, discount_factor_cost, 
+                           REWARD_DO, EFFORT_DO)
+    axs1.plot(policy, label = f"$\gamma_c$ = {discount_factor_cost}, $\gamma_r$ = {DISCOUNT_FACTOR_REWARD}", color = colors[i_d_r], linestyle = '--')
+
+axs1.set_ylabel('optimal time to work')
+axs1.set_xlabel('timesteps')
+axs1.legend()

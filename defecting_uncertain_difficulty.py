@@ -1,5 +1,5 @@
 """
-This is a script for an mdp for assignment submission when difficulty of the task 
+This is a script for an mdp when difficulty of the task 
 is uncertain and the only way to find out is to try the task. This then leads to 
 probabilistic transitions to one of N difficulty states which have different efforts 
 required to complete the task. Actions and reward structure are like
@@ -64,7 +64,7 @@ ACTIONS = [ ['work', 'shirk'] for i in range( len(STATES)-1 ) ]
 ACTIONS.append(['completed']) 
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 0.9 # discounting factor
+DISCOUNT_FACTOR = 1.0 # discounting factor
 EFFICACY = 0.5 # self-efficacy (probability of progress on working) in non-start/finished state
 DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 
@@ -73,7 +73,7 @@ REWARD_PASS = 4.0
 REWARD_FAIL = -4.0
 REWARD_SHIRK = 0.5
 EFFORT_TRY = -0.1 # effort to check 
-EFFORT_WORK = [-0.2, -0.5] # effort to complete task from one of the difficulty states
+EFFORT_WORK = [-0.2, -1.0] # effort to complete task from one of the difficulty states
 EFFORT_SHIRK = -0 
 REWARD_COMPLETED = REWARD_SHIRK
 
@@ -94,23 +94,33 @@ V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HOR
 colors = plt.cm.Blues(np.linspace(0.4,0.9,len(STATES)))
 lines = ['--', ':']
 fig, axs = plt.subplots( figsize = (8, 6) )
-for i_state, state in enumerate(STATES):
+fig1, axs1 = plt.subplots( figsize = (5, 3) )
+
+for i_state, state in enumerate(STATES[:-1]):
     
     #plt.figure( figsize = (8, 6) )
     
     axs.plot(V_opt[i_state], color = colors[i_state], marker = 'o', linestyle = 'None', label = f'$V^*({i_state})$',)
-    #plt.plot(policy_opt[i_state], label = 'policy*')
+    axs1.plot(policy_opt[i_state], color = colors[i_state], label = f'State {i_state}')
     
     for i_action, action in enumerate(ACTIONS[i_state]):
         
         axs.plot(Q_values[i_state][i_action, :], color = colors[i_state], linestyle = lines[i_action])
         
+        
 handles, labels = axs.get_legend_handles_labels()   
-handles.append(plt.plot([], [], color = 'black', linestyle = '--', label = '$Q(a=$ check or work$)$'))
-handles.append(plt.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=$ shirk$)$'))
-plt.legend()
+handles.append(axs.plot([], [], color = 'black', linestyle = '--', label = '$Q(a=$ check or work$)$'))
+handles.append(axs.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=$ shirk$)$'))
 
-plt.xlabel('timesteps')
+axs.legend()
+axs.set_xlabel('timesteps')
+axs1.legend()
+axs1.set_xlabel('timesteps')
+axs1.set_yticks([0,1])
+axs1.set_yticklabels(['WORK', 'SHIRK'])
+axs1.set_ylabel('policy')
+
+
 
 #%%
 

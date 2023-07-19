@@ -49,8 +49,8 @@ def find_optimal_policy(states, actions, horizon, discount_factor,
 def forward_runs( policy, V, initial_state, horizon, states, T):
     
     '''
-    function to simulate actions taken and states reached forward time given a policy 
-    and initial state in an mdp
+    function to simulate actions taken and states reached forward in time given 
+    a policy and initial state in an mdp
     
     inputs: policy, corresponding values, initial state, horizon, states available, T
     

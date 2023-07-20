@@ -60,7 +60,7 @@ ACTIONS.append(['completed'])
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 1.0 # discounting factor
-EFFICACY = 0.7# self-efficacy (probability of progress on working) in non-start/finished state
+EFFICACY = 1.0# self-efficacy (probability of progress on working) in non-start/finished state
 
 # utilities :
 REWARD_PASS = 4.0 
@@ -71,12 +71,14 @@ EFFORT_SHIRK = -0
 REWARD_COMPLETED = REWARD_SHIRK
 
 # envt dynmics : transitions between difficulty states independent of actions
+
 DYNAMICS = np.array( [[0.6, 0.2, 0.2],
                       [0.6, 0.2, 0.2],
                       [0.2, 0.6, 0.2]] ) # monotonic
 #np.array( [[0.1, 0.8, 0.1],
 #           [0.1, 0.1, 0.8],
 #           [0.8, 0.1, 0.1]] ) # cyclic
+
     
 #%%
 # get optimal policy
@@ -124,4 +126,5 @@ initial_state = 2
 for i in range(N_runs):
      
     s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
+
     

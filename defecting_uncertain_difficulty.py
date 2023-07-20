@@ -64,7 +64,7 @@ ACTIONS = [ ['work', 'shirk'] for i in range( len(STATES)-1 ) ]
 ACTIONS.append(['completed']) 
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 0.9 # discounting factor
+DISCOUNT_FACTOR = 1.0 # discounting factor
 EFFICACY = 0.5 # self-efficacy (probability of progress on working) in non-start/finished state
 DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 

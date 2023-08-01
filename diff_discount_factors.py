@@ -88,7 +88,7 @@ DISCOUNT_FACTOR_COMMON = 0.9 # common discount factor for both
 EFFICACY = 0.7 # self-efficacy (probability of progress on working)
 
 # utilities :
-REWARD_DO = 3.5
+REWARD_DO = 1.5
 EFFORT_DO = -1.0
 REWARD_COMPLETED = 0.0
 COST_COMPLETED = -0.0

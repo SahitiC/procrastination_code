@@ -4,6 +4,7 @@ mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 import mdp_algms
+import seaborn as sns
 
 #%%
 
@@ -83,7 +84,7 @@ ACTIONS[-1] =  ['done'] # actions for final state
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR_REWARD = 0.9 # discounting factor for rewards
-DISCOUNT_FACTOR_COST = 0.5 # discounting factor for costs
+DISCOUNT_FACTOR_COST = 0.7 # discounting factor for costs
 DISCOUNT_FACTOR_COMMON = 0.9 # common discount factor for both 
 EFFICACY = 0.7 # self-efficacy (probability of progress on working)
 
@@ -104,6 +105,23 @@ V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff
                                               reward_func, cost_func, reward_func_last, cost_func_last, T )
 
 effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
+
+#%%
+# heat map of full policy in state = 0
+
+policy_init_state = [ policy_opt_full[i][0] for i in range(HORIZON) ]
+policy_init_state = np.array( policy_init_state )
+f, ax = plt.subplots(figsize=(8, 6), dpi=100)
+cmap = sns.color_palette('hls', 2)
+sns.heatmap(policy_init_state, linewidths=.5, cmap=cmap)
+ax.set_xlabel('timestep', fontsize=20)
+ax.set_ylabel('horizon', fontsize=20)
+ax.tick_params(labelsize=20)
+colorbar = ax.collections[0].colorbar
+colorbar.set_ticks([0.25, 0.75])
+colorbar.ax.tick_params(labelsize = 20)
+colorbar.set_ticklabels(['WORK', 'SHIRK'])
+f.savefig('defection.png', dpi=100)
 
 #%%
 ### THIS WORKS ONLY FOR A SMALL MDP WHERE ONLY ONE STATE HAS TWO CHOICES OF ACTIONS WITH A SMALL HORIZON ###

@@ -11,9 +11,8 @@ import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = True
+plt.rcParams['text.usetex'] = False
 import mdp_algms
-
 
 #%%
 
@@ -209,9 +208,11 @@ for i_efficacy, efficacy in enumerate(efficacys):
         s, a, v = mdp_algms.forward_runs(policy_always_work, V_opt, initial_state, HORIZON, STATES, T)
         if s[-1] == len(STATES)-1: count_always_work[i_efficacy,0] +=1
 
-plt.figure(figsize=(8,6))
+plt.figure(figsize=(8,6), dpi=100)
 plt.bar( efficacys, count_always_work[:, 0]/N_runs, alpha = 0.5, width=0.1, color='tab:blue', label = 'always work')
 plt.bar( efficacys, count_opt[:, 0]/N_runs, alpha = 1, width=0.1, color='tab:blue', label = 'optimal policy')
-plt.legend()
-plt.xlabel('efficacy')
-plt.ylabel('Proportion of finished runs')
+plt.legend(fontsize=16)
+plt.xlabel('efficacy', fontsize=20)
+plt.ylabel('Proportion of finished runs', fontsize=20)
+plt.tick_params(labelsize = 20)
+plt.savefig('planned_delay.png', dpi=100)

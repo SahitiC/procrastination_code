@@ -199,7 +199,49 @@ def pomdp_value_iteration(pomdp, epsilon=0.1):
         if count > 10:
             if pomdp.max_difference(U, prev_U) < epsilon * (1 - pomdp.gamma) / pomdp.gamma:
                 return U
+            
+def get_regions(self, input_values):
+    """
+    Based on Remove dominated plans.
+    This method finds and runs thrugh the lines contributing to the
+    upper surface and returns the intersection belief points along with the 
+    corresponding actions and utility lines
+    """
 
+    values = [val for action in input_values for val in input_values[action]]
+    values.sort(key=lambda x: x[0], reverse=True)
+
+    best = [values[0]]
+    intersections = [0.0]
+    y1_max = max(val[1] for val in values)
+    tgt = values[0]
+    prev_b = 0
+    prev_ix = 0
+    while tgt[1] != y1_max:
+        min_b = 1
+        min_ix = 0
+        for i in range(prev_ix + 1, len(values)):
+            if values[i][0] - tgt[0] + tgt[1] - values[i][1] != 0:
+                trans_b = (values[i][0] - tgt[0]) / (values[i][0] - tgt[0] + tgt[1] - values[i][1])
+                if 0 <= trans_b <= 1 and trans_b > prev_b and trans_b < min_b:
+                    min_b = trans_b
+                    min_ix = i
+        prev_b = min_b
+        prev_ix = min_ix
+        tgt = values[min_ix]
+        best.append(tgt)
+        intersections.append(min_b)
+    intersections.append(1.0)
+        
+    actions = []
+    utilities = []
+    for value in best:
+        for action in input_values:
+            if any(all(value == v) for v in input_values[action]):
+                actions.append(action)
+                utilities.append(value)
+
+    return intersections, actions, utilities
 
 __doc__ += """
 >>> pi = best_policy(sequential_decision_environment, value_iteration(sequential_decision_environment, .01))

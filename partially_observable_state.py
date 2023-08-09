@@ -81,22 +81,22 @@ axs.legend()
 
 #%%
 # change params and run above in loop
-efficacies = [0.4, 0.7, 0.9]
+p_os = [0.6, 0.75, 0.9]
 
 fig, axs = plt.subplots( figsize = (8, 6) )
 
-for i_efficacy, efficacy in enumerate(efficacies):
+for i_p_o, p_o in enumerate(p_os):
     
-    t_prob = [[[1.0, 0.0], 
-               [0.0, 1.0]], 
+    e_prob = [[[p_o, 1.0-p_o], 
+               [1.0-p_o, p_o]], 
               
-              [[1.0-efficacy, efficacy], 
-               [0.0, 1.0]], 
+              [[0.5, 0.5], 
+               [0.5, 0.5]], 
               
-              [[1.0, 0.0], 
-               [0.0, 1.0]]]
+              [[0.5, 0.5], 
+               [0.5, 0.5]]]
 
-    pomdp = POMDP(ACTIONS, t_prob, E_PROB, REWARDS, STATES, GAMMA)
+    pomdp = POMDP(ACTIONS, T_PROB, e_prob, REWARDS, STATES, GAMMA)
     
     utility = pomdp_value_iteration(pomdp, epsilon=0.1)
     
@@ -111,7 +111,7 @@ for i_efficacy, efficacy in enumerate(efficacies):
         axs.plot([intersections[i], intersections[i+1]], 
                  [m * intersections[i] + b, m * intersections[i+1] + b],
                  color=colors[int(action)])
-        axs.text(0, np.max(np.array(u_best)[:,0])+0.5, f'eff={efficacy}')
+        axs.text(0, np.max(np.array(u_best)[:,0])+0.5, f'p_obs={p_o}')
     
 axs.set_xlabel('belief state', fontsize = 16)
 axs.set_ylabel('value', fontsize = 16)

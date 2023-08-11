@@ -81,7 +81,7 @@ axs.legend()
 
 #%%
 # change params and run above in loop
-p_os = [0.6, 0.75, 0.9]
+p_os = [0.7]
 
 fig, axs = plt.subplots( figsize = (8, 6) )
 

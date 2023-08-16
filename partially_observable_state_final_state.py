@@ -49,16 +49,16 @@ def interpolate_value(belief, value, db):
     mult = 1/db
     return interpolate2d(belief[0], round_down(belief[0], 2), round_up(belief[0], 2), db,
                          belief[1], round_down(belief[1], 2), round_up(belief[1], 2), db,
-                         value[int(round_down(belief[0], 2)*mult), int(round_down(belief[0], 2)*mult)],
-                         value[int(round_up(belief[0], 2)*mult), int(round_down(belief[0], 2)*mult)],
-                         value[int(round_down(belief[0], 2)*mult), int(round_up(belief[0], 2)*mult)],
-                         value[int(round_up(belief[0], 2)*mult), int(round_up(belief[0], 2)*mult)])
+                         value[int(round_down(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
+                         value[int(round_up(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
+                         value[int(round_down(belief[0], 2)*mult), int(round_up(belief[1], 2)*mult)],
+                         value[int(round_up(belief[0], 2)*mult), int(round_up(belief[1], 2)*mult)])
     
     
 #%%
 # define the pomdp 
 states = np.array( [0, 1, 2] ) # (1,0), (1,1), 2
-actions = np.array( ['check', 'work', 'submit'])
+actions = np.array( [0,1,2]) #'check', 'work', 'submit'
 observations = np.array( [0, 1, 2] )
 # transition probabilities between states for each action 
 efficacy = 0.9
@@ -130,15 +130,17 @@ for i_b1 in range(len(b)):
                 
                 for i_observation, observation in enumerate(observations):
                     
-                    next_belief = get_next_belief(belief, action, observation, e_prob, t_prob)
-                    future_value = future_value + \
-                                   pO_ba(belief, action, observation, e_prob, t_prob) * \
-                                   interpolate_value(next_belief, value, db)
+                    if pO_ba(belief, action, observation, e_prob, t_prob) > 0.0:
                     
-                q[i_action] = belief.T @ rewards[i_action, :] + discount_factor * future_value
+                        next_belief = get_next_belief(belief, action, observation, e_prob, t_prob)
+                        future_value = future_value + \
+                                       pO_ba(belief, i_action, observation, e_prob, t_prob) * \
+                                       interpolate_value(next_belief, value, db)
+                    
+                q[i_action] = belief.T @ rewards[action, :] + discount_factor * future_value
                               
-            value_new[i_b1, i_b2] = np.max(q)
-            policy[i_b1, i_b2] = np.argmax(q)
+            value_new[i_b1, i_b2] = np.nanmax(q)
+            policy[i_b1, i_b2] = np.nanargmax(q)
                 
             
 

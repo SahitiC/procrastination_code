@@ -60,7 +60,7 @@ ACTIONS.append(['completed'])
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 1.0 # discounting factor
-EFFICACY = 1.0# self-efficacy (probability of progress on working) in non-start/finished state
+EFFICACY = 0.7# self-efficacy (probability of progress on working) in non-start/finished state
 
 # utilities :
 REWARD_PASS = 4.0 
@@ -72,13 +72,14 @@ REWARD_COMPLETED = REWARD_SHIRK
 
 # envt dynmics : transitions between difficulty states independent of actions
 
-DYNAMICS = np.array( [[0.6, 0.2, 0.2],
-                      [0.6, 0.2, 0.2],
-                      [0.2, 0.6, 0.2]] ) # monotonic
-#np.array( [[0.1, 0.8, 0.1],
-#           [0.1, 0.1, 0.8],
-#           [0.8, 0.1, 0.1]] ) # cyclic
-
+DYNAMICS = np.array( [[0.8, 0.1, 0.1],
+                      [0.2, 0.7, 0.1],
+                      [0.1, 0.2, 0.7]] ) 
+# np.array( [[0.2, 0.2, 0.6],
+#             [0.6, 0.2, 0.2],
+#             [0.2, 0.6, 0.2]] ) # cyclic
+# np.array( [[0.6, 0.2, 0.2],
+#            [0.2, 0.6, 0.2]] ) # monotonic
     
 #%%
 # get optimal policy

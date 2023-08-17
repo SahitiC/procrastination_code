@@ -87,7 +87,6 @@ def find_optimal_policy_diff_discount_factors(states, actions, horizon, discount
     
     inputs: states, actions available in each state, rewards from actions and final rewards, 
     transition probabilities for each action in a state, discount factor, length of horizon
-    
     outputs: optimal values, optimal policy and action q-values for each timestep and state 
 
     '''

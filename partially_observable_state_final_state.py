@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
 
 #%%
 def pO_ba(belief, action, observation, e_prob, t_prob):
@@ -57,7 +58,6 @@ def interpolate_triangle(x, x1, x2, x3, y, y1, y2, y3,
         w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3))
         w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3))
         w3 = 1.0 - w1 - w2
-        
         return w1 * func1 + w2 * func2 + w3 * func3
 
 def interpolate_value(belief, value, db):
@@ -135,6 +135,9 @@ rewards = np.array([[-0.1, -0.1, -0.1],
 
 # define value and policy variables in grid of belief states
 # represent the beliefs of first N-1 states (N: total number of states)
+
+start = time.time()
+
 value = np.full( (int(1/db)+1, int(1/db)+1), np.nan )
 policy = np.full( (int(1/db)+1, int(1/db)+1), np.nan )
 b = np.arange(0, 1+db, db)
@@ -172,13 +175,13 @@ for i_b1 in range(len(b)):
                         future_value = future_value + \
                                        pO_ba(belief, action, observation, e_prob, t_prob) * \
                                        interpolate_value(np.round(next_belief, 6), value, db)
-                    
+                        if np.isnan(future_value): print("NaN encountered")
                 q[action] = belief.T @ rewards[action, :] + discount_factor * future_value
                               
             value_new[i_b1, i_b2] = np.nanmax(q)
             policy[i_b1, i_b2] = np.nanargmax(q)
                 
-            
-
+end = time.time()
+print(end-start)
     
 

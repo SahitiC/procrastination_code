@@ -14,16 +14,14 @@ def get_next_belief(belief, action, observation, e_prob, t_prob):
     """
     finding the next belief state given belief, action and observation
     """
-    return e_prob[action][:, observation] * (t_prob[action].T @ belief) / (
+    return (e_prob[action][:, observation] * (t_prob[action].T @ belief)) / (
            pO_ba(belief, action, observation, e_prob, t_prob) )
 
-def round_down(num,digits):
-    factor = 10.0 ** digits
-    return math.floor(num * factor) / factor
+def round_down(num, dx):
+    return math.floor(num / dx) * dx
 
-def round_up(num,digits):
-    factor = 10.0 ** digits
-    return math.ceil(num * factor) / factor
+def round_up(num, dx):
+    return math.ceil(num / dx) * dx
 
 def interpolate1d(x, x_0, x_1, dx, func_0, func_1):
     """
@@ -67,27 +65,27 @@ def interpolate_value(belief, value, db):
     mult = 1/db
     
     # if belief point lies exactly on grid, find exact value
-    if round_down(belief[0], 2) == round_up(belief[0], 2) and round_down(belief[1], 2) == round_up(belief[1], 2):
+    if round_down(belief[0], db) == round_up(belief[0], db) and round_down(belief[1], db) == round_up(belief[1], db):
         return value[int(belief[0] * mult), int(belief[1] * mult)]
     
     # if the outermost interpolation point is outside the grid, barycentric interpolate on triangle
-    elif round_up(belief[0], 2) + round_up(belief[1], 2) > 1.0:
-        return interpolate_triangle(belief[0], round_down(belief[0], 2), 
-                                    round_up(belief[0], 2), round_down(belief[0], 2),
-                                    belief[1], round_down(belief[1], 2),
-                                    round_down(belief[1], 2), round_up(belief[1], 2),
-                             value[int(round_down(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
-                             value[int(round_up(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
-                             value[int(round_down(belief[0], 2)*mult), int(round_up(belief[1], 2)*mult)])
+    elif round_up(belief[0], db) + round_up(belief[1], db) > 1.0:
+        return interpolate_triangle(belief[0], round_down(belief[0], db), 
+                                    round_up(belief[0], db), round_down(belief[0], db),
+                                    belief[1], round_down(belief[1], db),
+                                    round_down(belief[1], db), round_up(belief[1], db),
+                             value[int(round_down(belief[0], db)*mult), int(round_down(belief[1], db)*mult)],
+                             value[int(round_up(belief[0], db)*mult), int(round_down(belief[1], db)*mult)],
+                             value[int(round_down(belief[0], db)*mult), int(round_up(belief[1], db)*mult)])
    
     # for all other points, bilinear interpolate
     else:
-        return interpolate_bilinear(belief[0], round_down(belief[0], 2), round_up(belief[0], 2), db,
-                             belief[1], round_down(belief[1], 2), round_up(belief[1], 2), db,
-                             value[int(round_down(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
-                             value[int(round_up(belief[0], 2)*mult), int(round_down(belief[1], 2)*mult)],
-                             value[int(round_down(belief[0], 2)*mult), int(round_up(belief[1], 2)*mult)],
-                             value[int(round_up(belief[0], 2)*mult), int(round_up(belief[1], 2)*mult)])
+        return interpolate_bilinear(belief[0], round_down(belief[0], db), round_up(belief[0], db), db,
+                             belief[1], round_down(belief[1], db), round_up(belief[1], db), db,
+                             value[int(round_down(belief[0], db)*mult), int(round_down(belief[1], db)*mult)],
+                             value[int(round_up(belief[0], db)*mult), int(round_down(belief[1], db)*mult)],
+                             value[int(round_down(belief[0], db)*mult), int(round_up(belief[1], db)*mult)],
+                             value[int(round_up(belief[0], db)*mult), int(round_up(belief[1], db)*mult)])
     
     
 #%%
@@ -99,7 +97,9 @@ observations = np.array( [0, 1, 2] )
 efficacy = 0.9
 noise = 0.2
 discount_factor = 0.95
-db = 0.01 # discretisation of belief space
+db = 0.05 # discretisation of belief space
+max_iter = 100 # maximum value iteration rounds
+eps = 1e-3 # diff in value (diff_value) required for value iteration convergence
 # transition probabilities between states for each action 
 t_prob = np.array( [[[1.0, 0.0, 0.0], 
                      [0.0, 1.0, 0.0],
@@ -129,7 +129,7 @@ e_prob =  np.array( [[[1.0-noise, noise, 0.0],
 # rewards for each action in each state
 rewards = np.array([[-0.1, -0.1, -0.1], 
                     [-1.0, -1.0, -1.0], 
-                    [-4.0, 0.0, 4.0]])
+                    [0.0, 0.0, 3.0]])
 
 #%%
 
@@ -142,46 +142,93 @@ value = np.full( (int(1/db)+1, int(1/db)+1), np.nan )
 policy = np.full( (int(1/db)+1, int(1/db)+1), np.nan )
 b = np.arange(0, 1+db, db)
 
-# initialise value function 
+# initialise value function (at 0.0) in the valid belief region
 for i_b1 in range(len(b)):
     
     for i_b2 in range(len(b)):
         
         if b[i_b1] + b[i_b2] <= 1.0: value[i_b1, i_b2] = 0.0
                     
-i_iter = 0 # number of value iterations
-value_new = np.copy(value)
+i_iter = 0 # counter for number of value iterations
+value_new = np.copy(value) # initialise array to store updated values
+diff_value = np.inf # diff in value variable
 
-for i_b1 in range(len(b)):
+# stopping criteria: either greater than 100 iterations or diff dips below eps
+while i_iter < max_iter and diff_value > eps:
     
-    for i_b2 in range(len(b)):
+    # loop through belief states 
+    for i_b1 in range(len(b)):
         
-        if b[i_b1] + b[i_b2] <= 1.0:
+        for i_b2 in range(len(b)):
             
-            belief = np.array( [b[i_b1], b[i_b2], 1-b[i_b1]-b[i_b2]] )
-            
-            q = np.zeros((len(actions),)) # q-value for each action
-            
-            for i_action, action in enumerate(actions):
+            if b[i_b1] + b[i_b2] <= 1.0:
                 
-                future_value = 0.0
+                belief = np.array( [b[i_b1], b[i_b2], 1-b[i_b1]-b[i_b2]] )
                 
-                for i_observation, observation in enumerate(observations):
+                q = np.zeros((len(actions),)) # q-value for each action
+                
+                # calculate q value for each action 
+                for i_action, action in enumerate(actions):
                     
-                    if pO_ba(belief, action, observation, e_prob, t_prob) > 0.0:
+                    future_value = 0.0
                     
-                        next_belief = get_next_belief(belief, action, observation, e_prob, t_prob)
-                        if sum(np.round(next_belief, 6))>1.0: print("encountered belief > 1.0")
-                        future_value = future_value + \
-                                       pO_ba(belief, action, observation, e_prob, t_prob) * \
-                                       interpolate_value(np.round(next_belief, 6), value, db)
-                        if np.isnan(future_value): print("NaN encountered")
-                q[action] = belief.T @ rewards[action, :] + discount_factor * future_value
-                              
-            value_new[i_b1, i_b2] = np.nanmax(q)
-            policy[i_b1, i_b2] = np.nanargmax(q)
+                    # loop through observations
+                    for i_observation, observation in enumerate(observations):
+                        
+                        # only consider observations that have non-zero probablity
+                        if pO_ba(belief, action, observation, e_prob, t_prob) > 0.0:
+                            
+                            # get b' given b, o, a
+                            next_belief = get_next_belief(belief, action, observation, e_prob, t_prob)
+                            # make sure belief update <1.0
+                            if sum(np.round(next_belief, 6))>1.0: print("encountered belief > 1.0")
+                            # interpolate value at new belief and 
+                            # weight by probability of observing (P(O|b,a))
+                            future_value = future_value + \
+                                           pO_ba(belief, action, observation, e_prob, t_prob) * \
+                                           interpolate_value(np.round(next_belief, 6), value, db)
+                            # make sure interpolation doesn't return non-valid values
+                            if np.isnan(future_value): print("NaN encountered")
+                    
+                    #Bellman update
+                    q[action] = belief.T @ rewards[action, :] + discount_factor * future_value
+                
+                # find max value and corresponding policy
+                value_new[i_b1, i_b2] = np.nanmax(q)
+                policy[i_b1, i_b2] = np.nanargmax(q)
+    
+    # find maximum difference in value between subsequent iterations
+    diff_value = np.nanmax(np.abs(value_new-value)) 
+    value = np.copy(value_new)
+    i_iter += 1
                 
 end = time.time()
-print(end-start)
+print(f"time taken: {end-start}s")
+
+#%%
+# forward runs
+# given a policy and an initial belief and state, sample trajectories of actions
+
+belief = np.array([0.5, 0.5, 0.0])
+hidden_state = np.random.choice([0, 1], p = [0.5, 0.5])
+state_trajectory = [[belief, hidden_state]] # append beliefs and states
+action_trajectory = [] # append actions
+
+# # until action of submit is reached, loop
+# while action != 2:
+    
+# pick based on policy over beliefs: interpolate!
+action = interpolate_value(np.round(belief, 6), policy, db)
+action = int(np.round(action))
+# action leads to a transition in hidden state
+hidden_state = np.random.choice(states, p=t_prob[action][hidden_state])
+# sample new observation after transition
+observation = np.random.choice(observations, p=e_prob[action][hidden_state])
+# belief update from observation
+belief = get_next_belief(belief, action, observation, e_prob, t_prob)  
+   
+    
+    
     
 
+    

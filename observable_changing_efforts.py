@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 14
+mpl.rcParams['font.size'] = 16
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True

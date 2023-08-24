@@ -105,7 +105,7 @@ def interpolate_policy(belief, policy, db):
     
 
 def forward_runs_2D(belief, hidden_state, policy, db, states, observations,
-                 e_prob, t_prob):
+                 e_prob, t_prob, t_prob_terminal):
     """
     sample trajectories given initial beleif, hidden_state and policy
     """
@@ -117,7 +117,7 @@ def forward_runs_2D(belief, hidden_state, policy, db, states, observations,
     i_iter = 0
     
     # until action of submit is reached, loop
-    while action != 2 and i_iter < 100:
+    while hidden_state!=3 and i_iter < 100:
         
         belief_trajectory.append( belief )
         state_trajectory.append( hidden_state )
@@ -125,15 +125,18 @@ def forward_runs_2D(belief, hidden_state, policy, db, states, observations,
         # pick based on policy over beliefs: interpolate!
         action = interpolate_policy(np.round(belief, 6), policy, db)
         action = int( np.round(action) )
-        # action leads to a transition in hidden state
-        hidden_state = np.random.choice( states, p = t_prob [action] [hidden_state] )
-        # sample new observation after transition
-        observation = np.random.choice( observations, p = e_prob [action] [hidden_state] )
-        # belief update from observation
-        belief = get_next_belief( belief, action, observation, e_prob, t_prob)  
-        
         action_trajectory.append( action )
-        observation_trajectory.append( observation )
+        # action leads to a transition in hidden state (append terminal states)
+        hidden_state = np.random.choice(np.append(states, 3), 
+                                        p = np.append( t_prob [action] [hidden_state], 
+                                             (t_prob_terminal [action] [hidden_state]) ) )
+        # sample new observation after transition
+        if hidden_state != 3:
+            observation = np.random.choice( observations, p = e_prob [action] [hidden_state] )
+            # belief update from observation
+            belief = get_next_belief( belief, action, observation, e_prob, t_prob)  
+            observation_trajectory.append( observation )
+            
         i_iter += 1
     
     return belief_trajectory, state_trajectory, action_trajectory, observation_trajectory
@@ -144,7 +147,10 @@ def get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
     
     """
     derive optimal policy giiven problem description for a case with 3 states
-    and hence 2D belief space
+    and hence 2D belief space.
+    if there is a terminal state, then include only the probability of transitioning
+    to non-terminal states in the t_prob (and other matrices)
+    the total transition probability to all states (including terminal states) adds up to 1 
     """
     
     value = np.full( (int(1/db)+1, int(1/db)+1), np.nan )
@@ -181,10 +187,10 @@ def get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
                         
                         future_value = 0.0
                         
-                        # loop through observations
+                        # loop through observations to calculate future value in non-terminal belief states
                         for i_observation, observation in enumerate(observations):
                             
-                            # only consider observations that have non-zero probablity
+                            # only consider observations (and transitions) that have non-zero probablity
                             if pO_ba(belief, action, observation, e_prob, t_prob) > 0.0:
                                 
                                 # get b' given b, o, a
@@ -210,4 +216,7 @@ def get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
         value = np.copy(value_new)
         i_iter += 1
         
+    print(f"no. of iterations completed: {i_iter}")
+    print(f"epsilon diff between subsequent values: {diff_value}")
+    
     return policy, value

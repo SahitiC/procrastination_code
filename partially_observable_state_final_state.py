@@ -171,11 +171,23 @@ sns.despine()
 
 # average time of submission and correct submission rates
 
-efficacies = np.array( [0.3, 0.7, 0.9] )
-submission_times = np.zeros((100, 3, 2))
-correct_submissions = np.zeros((100, 3))
+efficacies = np.array( [0.5, 0.7, 0.9] )
+submission_times = np.zeros((100, len(efficacies), 2))
+correct_submissions = np.zeros((100, len(efficacies)))
 
 for i_efficacy, efficacy in enumerate(efficacies):
+    
+    t_prob = np.array( [[[1.0, 0.0, 0.0], 
+                         [0.0, 1.0, 0.0],
+                         [0.0, 0.0, 0.0]], 
+              
+                        [[1.0, 0.0, 0.0], 
+                         [0.0, 1.0-efficacy, efficacy],
+                         [0.0, 0.0, 0.0]], 
+              
+                         [[0.0, 0.0, 0.0], 
+                          [0.0, 0.0, 0.0],
+                          [0.0, 0.0, 0.0]]] )
     
     policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
                               rewards, discount_factor, db, max_iter, eps)
@@ -191,5 +203,24 @@ for i_efficacy, efficacy in enumerate(efficacies):
         
             submission_times[i, i_efficacy, initial_hidden_state] = len(trajectory[1])
         
-            if initial_hidden_state == 1:  
+            if initial_hidden_state == 1: correct_submissions[i, i_efficacy] = int(trajectory[1][-1]==2)
+
+plt.figure(figsize=(8,6), dpi=100)
+
+plt.errorbar(efficacies,
+             np.mean(submission_times[:,:,0], axis = 0), 
+             yerr = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100),
+             linestyle = '--',
+             linewidth = 2,
+             marker = 'o', markersize = 5,
+             label = 'hidden state = 0')
+
+plt.errorbar(efficacies,
+             np.mean(submission_times[:,:,1], axis = 0), 
+             yerr = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100),
+             linestyle = '--',
+             linewidth = 2,
+             marker = 'o', markersize = 5,
+             label = 'hidden state = 1')
+
 

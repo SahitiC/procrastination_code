@@ -53,7 +53,7 @@ e_prob =  np.array( [[[1.0-noise, noise, 0.0],
 # rewards for each action in each state
 rewards = np.array([[-0.1, -0.1, -0.1], 
                     [-1.5, -1.5, -1.5], 
-                    [0.0, 0.0, 5.0]])
+                    [0.0, 0.0, 3.0]])
 
 #%%
 

@@ -13,7 +13,7 @@ states = np.array( [0, 1, 2] ) # (1,0), (1,1), 2 : all non-terminal states
 actions = np.array( [0,1,2]) #'check', 'work', 'submit'
 observations = np.array( [0, 1, 2] )
 efficacy = 0.9
-noise = 0.3
+noise = 0.2
 discount_factor = 1.0
 db = 0.05 # discretisation of belief space
 max_iter = 100 # maximum value iteration rounds
@@ -63,8 +63,7 @@ rewards = np.array([[-0.1, -0.1, -0.1],
 start = time.time()
 
 policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                          rewards, discount_factor,
-                          db, max_iter, eps)
+                          rewards, discount_factor, db, max_iter, eps)
 
 end = time.time()
 print(f"time taken: {end-start}s")
@@ -86,7 +85,7 @@ cbar.set_ticklabels(['check', 'work', 'submit'])
 # given a policy and an initial belief and state, sample trajectories of actions
 plt.figure( figsize = (7, 5) )
 initial_belief = np.array( [0.5, 0.5, 0.0] )
-initial_hidden_state = 0 #np.random.choice([0, 1], p = [0.5, 0.5])
+initial_hidden_state = 1 #np.random.choice([0, 1], p = [0.5, 0.5])
 
 for i_run in range(50):
     

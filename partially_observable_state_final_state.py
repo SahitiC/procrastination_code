@@ -53,7 +53,7 @@ e_prob =  np.array( [[[1.0-noise, noise, 0.0],
 # rewards for each action in each state
 rewards = np.array([[-0.1, -0.1, -0.1], 
                     [-1.5, -1.5, -1.5], 
-                    [0.0, 0.0, 2.0]])
+                    [0.0, 0.0, 3.0]])
 
 #%%
 
@@ -86,7 +86,7 @@ cbar.set_ticklabels(['check', 'work', 'submit'])
 # given a policy and an initial belief and state, sample trajectories of actions
 plt.figure( figsize = (7, 5) )
 initial_belief = np.array( [0.5, 0.5, 0.0] )
-initial_hidden_state = 0 #np.random.choice([0, 1], p = [0.5, 0.5])
+initial_hidden_state = 1 #np.random.choice([0, 1], p = [0.5, 0.5])
 
 for i_run in range(50):
     

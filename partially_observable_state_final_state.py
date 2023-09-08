@@ -20,8 +20,8 @@ terminal_state = 1 # 1 if terminal state existis 0 otherwise
 states = np.array( [0, 1, 2] ) # (1,0), (1,1), 2 : all non-terminal states
 actions = np.array( [0,1,2]) #'check', 'work', 'submit'
 observations = np.array( [0, 1, 2] )
-efficacy = 0.9
-noise = 0.3
+efficacy = 0.7
+noise = 0.2
 discount_factor = 1.0
 db = 0.05 # discretisation of belief space
 max_iter = 100 # maximum value iteration rounds
@@ -171,56 +171,129 @@ sns.despine()
 
 # average time of submission and correct submission rates
 
-efficacies = np.array( [0.5, 0.7, 0.9] )
-submission_times = np.zeros((100, len(efficacies), 2))
-correct_submissions = np.zeros((100, len(efficacies)))
+priors = np.array( [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] )
+submission_times = np.zeros((200, len(priors), 2))
+correct_submissions = np.zeros((200, len(priors)))
 
-for i_efficacy, efficacy in enumerate(efficacies):
-    
-    t_prob = np.array( [[[1.0, 0.0, 0.0], 
-                         [0.0, 1.0, 0.0],
-                         [0.0, 0.0, 0.0]], 
-              
-                        [[1.0, 0.0, 0.0], 
-                         [0.0, 1.0-efficacy, efficacy],
-                         [0.0, 0.0, 0.0]], 
-              
-                         [[0.0, 0.0, 0.0], 
-                          [0.0, 0.0, 0.0],
-                          [0.0, 0.0, 0.0]]] )
+for i_prior, prior in enumerate(priors):
     
     policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
                               rewards, discount_factor, db, max_iter, eps)
-    
-    for i in range(100):
         
-        initial_belief = np.array( [0.5, 0.5, 0.0] )
+    for i in range(200):
+        
+        initial_belief = np.array( [1-prior, prior, 0.0] )
         
         for initial_hidden_state in range(2):    
             
             trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
                                                  states, observations, e_prob, t_prob, t_prob_terminal)  
         
-            submission_times[i, i_efficacy, initial_hidden_state] = len(trajectory[1])
+            submission_times[i, i_prior, initial_hidden_state] = len(trajectory[1])
         
-            if initial_hidden_state == 1: correct_submissions[i, i_efficacy] = int(trajectory[1][-1]==2)
+            if initial_hidden_state == 1:
+                correct_submissions[i, i_prior] = int(trajectory[1][-1]==2)
 
-plt.figure(figsize=(8,6), dpi=100)
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
 
-plt.errorbar(efficacies,
-             np.mean(submission_times[:,:,0], axis = 0), 
-             yerr = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100),
-             linestyle = '--',
-             linewidth = 2,
-             marker = 'o', markersize = 5,
-             label = 'hidden state = 0')
+mean = np.mean(submission_times[:,:,0], axis = 0)
+std = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100)
+axs.plot(priors,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = 'hidden state = 0',
+         color = 'brown')
 
-plt.errorbar(efficacies,
-             np.mean(submission_times[:,:,1], axis = 0), 
-             yerr = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100),
-             linestyle = '--',
-             linewidth = 2,
-             marker = 'o', markersize = 5,
-             label = 'hidden state = 1')
+axs.fill_between(priors,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'brown')
+
+mean = np.mean(submission_times[:,:,1], axis = 0)
+std = np.std(submission_times[:,:,1], axis = 0)/np.sqrt(100)
+axs.plot(priors,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = 'hidden state = 1',
+         color = 'tomato')
+
+axs.fill_between(priors,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tomato')
+
+axs.set_xlabel('prior prob (s=1)')
+axs.set_ylabel('avg submission time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
 
 
+ax2 = axs.twinx()
+mean = np.mean(correct_submissions, axis = 0)
+ax2.plot(priors,
+         mean,
+         linewidth = 3,
+         color='tab:blue')
+ax2.set_ylabel('avg completion rate', color='tab:blue')
+ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+#%%
+
+priors = np.linspace(0.2, 0.9, 30)
+submission_times = np.zeros((400, len(priors)))
+correct_submissions = np.full((400, len(priors)), np.nan)
+
+policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
+                          rewards, discount_factor, db, max_iter, eps)
+
+for i_prior, prior in enumerate(priors):
+        
+    for i in range(400):
+        
+        initial_belief = np.array( [1-prior, prior, 0.0] )
+        
+        initial_hidden_state = np.random.choice([0, 1], p = [0.5, 0.5])   
+            
+        trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
+                                             states, observations, e_prob, t_prob, t_prob_terminal)  
+    
+        submission_times[i, i_prior] = len(trajectory[1])
+    
+        if initial_hidden_state == 1:
+            correct_submissions[i, i_prior] = int(trajectory[1][-1]==2)
+
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
+
+mean = np.mean(submission_times, axis = 0) 
+std = np.std(submission_times, axis = 0)/np.sqrt(100)
+axs.plot(priors,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         color = 'brown')
+
+axs.fill_between(priors,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'brown')
+
+axs.set_xlabel('prior prob (s=1)')
+axs.set_ylabel('avg submission time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
+
+
+ax2 = axs.twinx()
+mean = np.nanmean(correct_submissions, axis = 0)
+ax2.plot(priors,
+         mean,
+         linewidth = 3,
+         color='tab:blue')
+ax2.set_ylabel('avg completion rate', color='tab:blue')
+ax2.tick_params(axis='y', labelcolor='tab:blue')

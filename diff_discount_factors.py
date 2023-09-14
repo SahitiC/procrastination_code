@@ -106,22 +106,6 @@ V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff
 
 effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
 
-#%%
-# heat map of full policy in state = 0
-
-policy_init_state = [ policy_opt_full[i][0] for i in range(HORIZON) ]
-policy_init_state = np.array( policy_init_state )
-f, ax = plt.subplots(figsize=(8, 6), dpi=100)
-cmap = sns.color_palette('hls', 2)
-sns.heatmap(policy_init_state, linewidths=.5, cmap=cmap)
-ax.set_xlabel('timestep', fontsize=20)
-ax.set_ylabel('horizon', fontsize=20)
-ax.tick_params(labelsize=20)
-colorbar = ax.collections[0].colorbar
-colorbar.set_ticks([0.25, 0.75])
-colorbar.ax.tick_params(labelsize = 20)
-colorbar.set_ticklabels(['WORK', 'SHIRK'])
-f.savefig('defection.png', dpi=100)
 
 #%%
 ### THIS WORKS ONLY FOR A SMALL MDP WHERE ONLY ONE STATE HAS TWO CHOICES OF ACTIONS WITH A SMALL HORIZON ###
@@ -215,3 +199,138 @@ for i_d_r, discount_factor_cost in enumerate(discounts_cost):
 axs1.set_ylabel('optimal time to work')
 axs1.set_xlabel('timesteps')
 axs1.legend()
+
+#%%
+# heat map of full policy in state = 0
+
+policy_init_state = [ policy_opt_full[i][0] for i in range(HORIZON) ]
+policy_init_state = np.array( policy_init_state )
+f, ax = plt.subplots(figsize=(4, 4), dpi=100)
+cmap = sns.color_palette('hls', 2)
+sns.heatmap(policy_init_state, linewidths=.5, cmap=cmap, cbar=False)
+ax.set_xlabel('timestep')
+ax.set_ylabel('horizon')
+ax.tick_params()
+colorbar = ax.collections[0].colorbar
+colorbar.set_ticks([0.25, 0.75])
+colorbar.set_ticklabels(['WORK', 'SHIRK'])
+
+#%%
+# avg finishing times and rates 
+N_runs = 1000
+initial_state = 0
+
+# diff discounts: defecting
+finishing_times_diff_discount = []
+finishing_rates_diff_discount = []
+V_opt = np.zeros((len(STATES), HORIZON))
+
+reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, REWARD_DO, 
+                                                                                 EFFORT_DO, REWARD_COMPLETED, COST_COMPLETED )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
+                                              HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, 
+                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
+   
+effective_policy = np.zeros((len(STATES), HORIZON))+10
+effective_policy[0,:] =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
+effective_policy[1,:] =  np.array([policy_opt_full[HORIZON-1-i][1][i] for i in range(HORIZON)]) # actual policy followed by agent
+   
+for i in range(N_runs):
+     
+    s, a, v = mdp_algms.forward_runs(effective_policy, V_opt, initial_state, HORIZON, STATES, T)
+    
+    if 1 in s: 
+        finishing_times_diff_discount.append(np.where(s==1)[0][0])
+        finishing_rates_diff_discount.append(1)
+    else:
+        finishing_rates_diff_discount.append(0)
+        
+        
+# same discounts
+finishing_times_same_discount = []
+finishing_rates_same_discount = []
+reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, REWARD_DO, 
+                                                                                 EFFORT_DO, REWARD_COMPLETED, COST_COMPLETED )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
+                                              HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_REWARD, 
+                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
+
+effective_policy = np.zeros((len(STATES), HORIZON))+10
+effective_policy[0,:] =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
+effective_policy[1,:] =  np.array([policy_opt_full[HORIZON-1-i][1][i] for i in range(HORIZON)]) # actual policy followed by agent
+
+for i in range(N_runs):
+     
+    s, a, v = mdp_algms.forward_runs(effective_policy, V_opt, initial_state, HORIZON, STATES, T)
+    
+    if 1 in s: 
+        finishing_times_same_discount.append(np.where(s==1)[0][0])
+        finishing_rates_same_discount.append(1)
+    else:
+        finishing_rates_same_discount.append(0)
+        
+            
+# precommit
+finishing_times_precommit = []
+finishing_rates_precommit = []
+reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, REWARD_DO, 
+                                                                                 EFFORT_DO, REWARD_COMPLETED, COST_COMPLETED )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
+                                              HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, 
+                                              reward_func, cost_func, reward_func_last, cost_func_last, T )   
+ 
+policy_precommit = np.array(policy_opt_full)[HORIZON-1,:,:]  
+for i in range(N_runs):
+     
+    s, a, v = mdp_algms.forward_runs(policy_precommit, V_opt, initial_state, HORIZON, STATES, T)
+    
+    if 1 in s: 
+        finishing_times_precommit.append(np.where(s==1)[0][0])
+        finishing_rates_precommit.append(1)
+    else:
+        finishing_rates_precommit.append(0)
+        
+fig, axs = plt.subplots(figsize=(5,4), dpi=100)
+axs.hist([finishing_times_same_discount, 
+          finishing_times_precommit,
+          finishing_times_diff_discount],
+         density =True,
+         bins = np.arange(0,HORIZON,1),
+         color=[mpl.colors.to_rgba('tab:blue', alpha=0.3), 
+                mpl.colors.to_rgba('tab:blue', alpha=0.6),
+                'tab:blue'],
+         stacked=True)
+axs.set_xlabel('finishing times')
+axs.set_ylabel('density')
+sns.despine()
+
+plt.figure(figsize=(5,4), dpi = 100)
+plt.bar(['same \n discount', 'pre-commit', 'different \n discounts'],
+        [np.mean(finishing_rates_same_discount), 
+         np.mean(finishing_rates_precommit),
+         np.mean(finishing_rates_diff_discount)],
+         color = 'brown')
+plt.xlabel('policy')
+plt.ylabel('completion rates')
+sns.despine()
+
+#%%
+# showing preference reversals
+rewards = 1.5 * ( 0.9**np.arange(0,10,1) )
+efforts = 1.0 * ( 0.7**np.arange(0,10,1) )
+plt.figure(figsize=(4,4), dpi=100)
+plt.plot(rewards, label='reward', color='tab:blue', linewidth=2)
+plt.plot(efforts, label ='efforts', color='brown', linewidth=2)
+plt.xlabel('timestep')
+plt.ylabel('value')
+plt.vlines(np.where(rewards-efforts == np.max(rewards-efforts))[0][0],
+           0, 1.5, color='black')
+plt.ylim(0, 1.5)
+plt.legend(frameon=False)
+sns.despine()

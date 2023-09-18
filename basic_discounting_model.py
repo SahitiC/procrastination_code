@@ -76,11 +76,11 @@ ACTIONS[-1] =  ['completed'] # actions for final state
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 0.9 # discounting factor
-EFFICACY = 0.9 # self-efficacy (probability of progress on working)
+EFFICACY = 0.6 # self-efficacy (probability of progress on working)
 
 # utilities :
-REWARD_PASS = 4.0 
-REWARD_FAIL = -4.0
+REWARD_PASS = 2.0 
+REWARD_FAIL = -2.0
 REWARD_SHIRK = 0.5
 EFFORT_WORK = -0.4
 EFFORT_SHIRK = -0 
@@ -241,7 +241,7 @@ discount_factor = 0.9
 reward_pass = 2
 reward_fail = -2
 
-reward_func, reward_func_last = get_reward_functions(STATES, reward_pass, reward_fail, REWARD_SHIRK, 
+reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
 T = get_transition_prob(STATES, EFFICACY)
 V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, 

@@ -237,15 +237,12 @@ plt.savefig('planned_delay.png', dpi=100)
 
 # demonstration of discounting
 
-discount_factor = 0.9
-reward_pass = 2
-reward_fail = -2
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
 T = get_transition_prob(STATES, EFFICACY)
 V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, 
-                              discount_factor, reward_func, reward_func_last, T)
+                              DISCOUNT_FACTOR, reward_func, reward_func_last, T)
 
 # plots of policies and values
 plt.figure( figsize = (4, 4) , dpi = 100)
@@ -295,14 +292,12 @@ completion_times = np.full((N_runs, 6), np.nan)
 completion_rates = np.zeros((N_runs, 6))
 efforts = np.array([0.0, -0.1, -0.2, -0.4, -0.6, -0.8])
 
-efficacy = 0.6
-
 for i_e, effort_work in enumerate(efforts):
     
     
     reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                          REWARD_COMPLETED, effort_work, EFFORT_SHIRK)
-    T = get_transition_prob(STATES, efficacy)
+    T = get_transition_prob(STATES, EFFICACY)
     V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
     

@@ -200,7 +200,8 @@ N_runs = 1000
 probabilities = np.linspace(0.0, 1.0, 5)
 # optimal starting point for 4 reward regimes (change manually)
 checking_times = np.zeros( len(probabilities) ) 
-finishing_times = np.full((N_runs, len(probabilities)), np.nan)
+# different columns for the different difficulty states
+finishing_times = np.full((N_runs, len(probabilities), 2), np.nan) 
 initial_state = 0
 
 for i_prob, difficulty_probability in enumerate(probabilities):
@@ -219,7 +220,11 @@ for i_prob, difficulty_probability in enumerate(probabilities):
          
         s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
         
-        if 3 in s: finishing_times[i, i_prob] = np.where(s==3)[0][0]
+        if 3 in s: finishing_times[i, i_prob, 0] = np.where(s==3)[0][0]
+        if 1 in s: 
+            finishing_times[i, i_prob, 1] = 0
+        elif 2 in s:
+            finishing_times[i, i_prob, 1] = 1
               
 plt.figure(figsize=(5,4), dpi=100)
 plt.plot(probabilities, 

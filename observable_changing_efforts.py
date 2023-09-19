@@ -73,9 +73,9 @@ REWARD_COMPLETED = REWARD_SHIRK
 
 # envt dynmics : transitions between difficulty states independent of actions
 
-DYNAMICS = np.array( [[0.9, 0.1, 0.0],
-                      [0.9, 0.1, 0.0],
-                      [0.0, 0.9, 0.1]] ) 
+# DYNAMICS = np.array( [[0.9, 0.1, 0.0],
+#                       [0.9, 0.1, 0.0],
+#                       [0.0, 0.9, 0.1]] ) 
 
 # DYNAMICS = np.array( [[1.0, 0.0, 0.0],
 #                       [0.05, 0.95, 0.0],
@@ -83,9 +83,9 @@ DYNAMICS = np.array( [[0.9, 0.1, 0.0],
 # DYNAMICS = np.array( [[0.2, 0.2, 0.6],
 #                       [0.6, 0.2, 0.2],
 #                       [0.2, 0.6, 0.2]] ) # cyclic
-# DYNAMICS = np.array( [[1.0, 0.0, 0.0],
-#                       [0.0, 1.0, 0.0],
-#                       [0.0, 0.0, 1.0]] ) # cyclic
+DYNAMICS = np.array( [[1.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0],
+                      [0.0, 0.0, 1.0]] ) # identity
 
     
 #%%

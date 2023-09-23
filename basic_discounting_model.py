@@ -11,7 +11,7 @@ import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = False
+plt.rcParams['text.usetex'] = True
 import mdp_algms
 import seaborn as sns
 
@@ -31,15 +31,19 @@ def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_
     return reward_func, reward_func_last
 
 #immediate rewards
-def get_reward_functions_immediate(states, reward_work, reward_shirk, effort_work, effort_shirk):
+def get_reward_functions_immediate(states, reward_work, reward_shirk, 
+                                   effort_work, effort_shirk):
     
-    # reward from actions within horizon
     reward_func = [] 
-    reward_func = [([reward_work + effort_work, reward_shirk + effort_shirk]) for i in range( len(states)-1 )] # rewards in non-completed states
-    reward_func.append( [reward_shirk + effort_shirk] ) # reward in completed state
+    # reward for actions (dependis on current state and next state)
+    reward_func.append( [ np.array([effort_work, reward_work + effort_work, 0]), 
+                          np.array([reward_shirk, 0, 0]) ] ) # transitions for work, shirk
+    reward_func.append( [ np.array([0, effort_work, reward_work + effort_work]), 
+                np.array([0, reward_shirk, 0]) ] ) # transitions for work, shirk
+    reward_func.append( [ np.array([0, 0, reward_shirk]) ] ) # transitions for completed
     
     # reward from final evaluation
-    reward_func_last =  np.linspace(reward_fail, reward_pass, len(states)) 
+    reward_func_last =  np.array( [-1*reward_work, 0, 0] )
     
     return reward_func, reward_func_last
 
@@ -75,7 +79,7 @@ ACTIONS[:-1] = [ ['work', 'shirk'] for i in range( len(STATES)-1 )] # actions fo
 ACTIONS[-1] =  ['completed'] # actions for final state
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 0.9 # discounting factor
+DISCOUNT_FACTOR = 1.0 # discounting factor
 EFFICACY = 0.6 # self-efficacy (probability of progress on working)
 
 # utilities :
@@ -193,56 +197,90 @@ for i_state in range(N_INTERMEDIATE_STATES+1):
     
     
 #%%
-# forward runs
+# start times and completion times vs efficacy
     
-efficacys = np.linspace(0, 1, 10) # vary efficacy 
-policy_always_work = np.full(np.shape(policy_opt), 0) # always work policy
-V_always_work = np.full(np.shape(V_opt), 0.0)
+efficacys = np.linspace(0, 1, 20) # vary efficacy 
 
 # arrays to store no. of runs where task was finished 
-count_opt = np.full( (len(efficacys), 1), 0) 
-count_always_work = np.full( (len(efficacys), 1), 0) # policy of always work
-N_runs = 5000 # no. of runs for each parameter set
+N_runs = 1000 # no. of runs for each parameter set
+completion_times = np.full((N_runs, len(efficacys)), np.nan)
+start_works = np.full( (len(efficacys), N_INTERMEDIATE_STATES+1), np.nan )
+reward_pass = 4
+reward_fail = -4
 
 for i_efficacy, efficacy in enumerate(efficacys):
     
     # get optimal policy for current parameter set
-    reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
+    reward_func, reward_func_last = get_reward_functions(STATES, reward_pass, reward_fail, REWARD_SHIRK, 
                                                          REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
     T = get_transition_prob(STATES, efficacy)
     V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
+    
+    for i_state in range(N_INTERMEDIATE_STATES+1):
+        
+        # find timepoints where it is optimal to work (when task not completed, state=0)
+        start_work = np.where( policy_opt[i_state, :] == 0 )[0]
+        
+        if len(start_work) > 0 :
+            start_works[i_efficacy, i_state] = start_work[0] # first time to start working
+
     
     # run forward (N_runs no. of times), count number of times task is finished for each policy
     initial_state = 0
     for i in range(N_runs):
          
         s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
-        if s[-1] == len(STATES)-1: count_opt[i_efficacy,0] +=1
-        
-        s, a, v = mdp_algms.forward_runs(policy_always_work, V_opt, initial_state, HORIZON, STATES, T)
-        if s[-1] == len(STATES)-1: count_always_work[i_efficacy,0] +=1
+        if 2 in s: 
+            completion_times[i, i_efficacy] = np.where(s==2)[0][0]
+            
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
 
-plt.figure(figsize=(8,6), dpi=100)
-plt.bar( efficacys, count_always_work[:, 0]/N_runs, alpha = 0.5, width=0.1, color='tab:blue', label = 'always work')
-plt.bar( efficacys, count_opt[:, 0]/N_runs, alpha = 1, width=0.1, color='tab:blue', label = 'optimal policy')
-plt.legend(fontsize=16)
-plt.xlabel('efficacy', fontsize=20)
-plt.ylabel('Proportion of finished runs', fontsize=20)
-plt.tick_params(labelsize = 20)
-plt.savefig('planned_delay.png', dpi=100)
+mean = np.nanmean(completion_times, axis = 0) 
+std = np.nanstd(completion_times, axis = 0)/np.sqrt(1000)
+axs.plot(efficacys,
+         mean, 
+         linewidth = 2,
+         marker = 'o',
+         color = 'tab:blue')
+
+axs.fill_between(efficacys,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tab:blue')
+
+axs.set_xlabel('efficacy')
+axs.set_ylabel('avg completion time', color='tab:blue')
+axs.tick_params(axis='y', labelcolor='tab:blue')
+axs.set_xlim(0.2,1)
+axs.set_ylim(5.8,10)
+
+ax2 = axs.twinx()
+ax2.plot(efficacys,
+         start_works[:, 0],
+         linewidth = 2,
+         color='tomato')
+ax2.plot(efficacys,
+         start_works[:, 1],
+         linewidth = 2,
+         color='brown')
+ax2.set_ylabel('starting time', color='brown', rotation = 270, labelpad=15)
+ax2.tick_params(axis='y', labelcolor='brown')
+ax2.set_ylim(5.8,10)
 
 #%%
 # final plots
 
 # demonstration of discounting
 
+discount_factor = 1.0
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
 T = get_transition_prob(STATES, EFFICACY)
 V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, 
-                              DISCOUNT_FACTOR, reward_func, reward_func_last, T)
+                              discount_factor, reward_func, reward_func_last, T)
 
 # plots of policies and values
 plt.figure( figsize = (4, 4) , dpi = 100)
@@ -292,12 +330,14 @@ completion_times = np.full((N_runs, 6), np.nan)
 completion_rates = np.zeros((N_runs, 6))
 efforts = np.array([0.0, -0.1, -0.2, -0.4, -0.6, -0.8])
 
+efficacy = 0.6
+
 for i_e, effort_work in enumerate(efforts):
     
     
     reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                          REWARD_COMPLETED, effort_work, EFFORT_SHIRK)
-    T = get_transition_prob(STATES, EFFICACY)
+    T = get_transition_prob(STATES, efficacy)
     V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
     
@@ -340,8 +380,21 @@ ax2.plot(efforts,
 ax2.set_ylabel('avg completion rate', color='tab:blue', rotation = 270, labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
 
-#%%
 
+#%%
+#immediate rewards: example policy
+reward_work = 2.0
+effort_work = -0.4
+reward_shirk = 0.5
+reward_func, reward_func_last = get_reward_functions_immediate(STATES, reward_work, reward_shirk, 
+                                   effort_work, EFFORT_SHIRK)
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy_prob_rewards(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
+                              reward_func, reward_func_last, T)
+
+#%%
+#immediate rewards vs delayed
     
 efficacys = np.linspace(0, 1, 10) # vary efficacy 
 policy_always_work = np.full(np.shape(policy_opt), 0) # always work policy
@@ -351,8 +404,11 @@ V_always_work = np.full(np.shape(V_opt), 0.0)
 count_opt = np.full( (len(efficacys), 1), 0) 
 count_imm = np.full( (len(efficacys), 1), 0) # policy of always work
 N_runs = 1000 # no. of runs for each parameter set
-reward_fail = 0
-reward_pass = 5.0
+reward_work = 4.0
+effort_work = -0.4
+reward_shirk = 0.5
+reward_pass = 4.0
+reward_fail = -4.0
 
 for i_efficacy, efficacy in enumerate(efficacys):
     
@@ -364,10 +420,11 @@ for i_efficacy, efficacy in enumerate(efficacys):
                                   reward_func, reward_func_last, T)
     
     # get optimal policy for current parameter set
-    reward_func, reward_func_last =  get_reward_functions_immediate(STATES, 
-                                reward_pass, REWARD_SHIRK, EFFORT_WORK, EFFORT_SHIRK)
+    reward_func, reward_func_last = get_reward_functions_immediate(STATES, reward_work, reward_shirk, 
+                                       effort_work, EFFORT_SHIRK)
     T = get_transition_prob(STATES, efficacy)
-    V_opt, policy_opt_imm, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
+    
+    V_opt, policy_opt_imm, Q_values = mdp_algms.find_optimal_policy_prob_rewards(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
     
     # run forward (N_runs no. of times), count number of times task is finished for each policy
@@ -389,14 +446,15 @@ sns.despine()
 
 #%%
 # legends 
-colors = ["tab:blue"#mpl.colors.to_rgba('tab:blue', alpha=0.5),
-          "brown"]
-cmap= mpl.colormaps.get_cmap('viridis')
-colors = [cmap(1.0), cmap(0.5), cmap(0.0)]
-plt.figure(figsize=(1,1), dpi=100)
+colors = ["brown",
+          mpl.colors.to_rgba('tab:blue', alpha=0.5),#mpl.colors.to_rgba('tab:blue', alpha=0.5),
+         "tab:blue"]
+# cmap= mpl.colormaps.get_cmap('viridis')
+# colors = [cmap(1.0), cmap(0.5), cmap(0.0)]
+plt.figure(figsize=(0.5,0.5), dpi=100)
 f = lambda m,c: plt.plot([],[],marker=m, markersize=15, color=c, ls="none")[0]
 handles = [f("s", colors[i]) for i in range(3)]
-labels = ["submit", "work", "check"]
+labels = [r"$\gamma_r=\gamma_c$", r"$\gamma_r<\gamma_c$", r"$\gamma_r>\gamma_c$"]
 legend = plt.legend(handles, labels, loc=3, 
                     framealpha=1, frameon=False) 
                     #title='condition', title_fontsize=18)
@@ -404,4 +462,3 @@ fig  = legend.figure
 fig.canvas.draw()
 plt.axis('off')
 plt.show()
-

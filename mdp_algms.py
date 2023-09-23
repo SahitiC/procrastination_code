@@ -45,6 +45,51 @@ def find_optimal_policy(states, actions, horizon, discount_factor,
             
     return V_opt, policy_opt, Q_values
 
+def find_optimal_policy_prob_rewards(states, actions, horizon, discount_factor, 
+                        reward_func, reward_func_last, T):
+    '''
+    function to find optimal policy for an MDP with finite horizon, discrete states,
+    deterministic rewards and actions using dynamic programming. now, reward
+    recieved depends on the next state as well
+    
+    inputs: states, actions available in each state, rewards from actions and final rewards, 
+    transition probabilities for each action in a state, discount factor, length of horizon
+    
+    outputs: optimal values, optimal policy and action q-values for each timestep and state 
+        
+    '''
+
+    V_opt = np.full( (len(states), horizon+1), np.nan)
+    policy_opt = np.full( (len(states), horizon), np.nan)
+    Q_values = np.full( len(states), np.nan, dtype = object)
+    
+    for i_state, state in enumerate(states):
+        
+        # V_opt for last time-step 
+        V_opt[i_state, -1] = reward_func_last[i_state]
+        # arrays to store Q-values for each action in each state
+        Q_values[i_state] = np.full( (len(actions[i_state]), horizon), np.nan)
+    
+    # backward induction to derive optimal policy  
+    for i_timestep in range(horizon-1, -1, -1):
+        
+        for i_state, state in enumerate(states):
+            
+            Q = np.full( len(actions[i_state]), np.nan) 
+            
+            for i_action, action in enumerate(actions[i_state]):
+                
+                # q-value for each action (bellman equation)
+                Q[i_action] = T[i_state][i_action] @ reward_func[i_state][i_action].T + discount_factor * (
+                              T[i_state][i_action] @ V_opt[states, i_timestep+1] )
+            
+            # find optimal action (which gives max q-value)
+            V_opt[i_state, i_timestep] = np.max(Q)
+            policy_opt[i_state, i_timestep] = np.argmax(Q)
+            Q_values[i_state][:, i_timestep] = Q
+            
+    return V_opt, policy_opt, Q_values
+
 
 def forward_runs( policy, V, initial_state, horizon, states, T):
     
@@ -120,9 +165,9 @@ def find_optimal_policy_diff_discount_factors(states, actions, horizon, discount
                 for i_action, action in enumerate(actions[i_state]):
                     
                     # q-value for each action (bellman equation)
-                    Q[i_action] = ( discount_factor_reward**(i_timestep-i_iter) ) * reward_func[i_state][i_action] + (
-                                    discount_factor_cost**(i_timestep-i_iter) ) * cost_func[i_state][i_action] + (
-                                    T[i_state][i_action] @ V_opt[states, i_timestep+1] )
+                    r = ( discount_factor_reward**(i_timestep-i_iter) ) * reward_func[i_state][i_action] + (
+                        discount_factor_cost**(i_timestep-i_iter) ) * cost_func[i_state][i_action]
+                    Q[i_action] = T[i_state][i_action] @ r.T + T[i_state][i_action] @ V_opt[states, i_timestep+1] 
                 
                 # find optimal action (which gives max q-value)
                 V_opt[i_state, i_timestep] = np.max(Q)

@@ -75,7 +75,7 @@ HORIZON = 10 # deadline
 DISCOUNT_FACTOR_REWARD = 0.9 # discounting factor for rewards
 DISCOUNT_FACTOR_COST = 0.7 # discounting factor for costs
 DISCOUNT_FACTOR_COMMON = 0.9 # common discount factor for both 
-EFFICACY = 0.7 # self-efficacy (probability of progress on working)
+EFFICACY = 0.6 # self-efficacy (probability of progress on working)
 
 # utilities :
 REWARD_DO = 2.0
@@ -90,7 +90,7 @@ reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions(
 T = get_transition_prob(STATES, EFFICACY)
 
 V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
-                                              HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_REWARD, 
+                                              HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, 
                                               reward_func, cost_func, reward_func_last, cost_func_last, T )
 
 effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
@@ -131,75 +131,15 @@ V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy( STATES, ACTIONS, HO
 
 policy_init_state = [ policy_opt_full[i][0] for i in range(HORIZON) ]
 policy_init_state = np.array( policy_init_state )
-f, ax = plt.subplots(figsize=(4, 4), dpi=100)
+f, ax = plt.subplots(figsize=(5, 4), dpi=100)
 cmap = sns.color_palette('hls', 2)
-sns.heatmap(policy_init_state, linewidths=.5, cmap=cmap, cbar=False)
+sns.heatmap(policy_init_state, linewidths=.5, cmap=cmap, cbar=True)
 ax.set_xlabel('timestep')
 ax.set_ylabel('horizon')
 ax.tick_params()
 colorbar = ax.collections[0].colorbar
 colorbar.set_ticks([0.25, 0.75])
-colorbar.set_ticklabels(['WORK', 'SHIRK'])    
-
-#%%
-# show reversals with delay 
-
-reward_do = 0.0
-effort_do = -1.0
-reward_completed = 2.0
-cost_completed = -0.0
-
-# solve for common discount case
-reward_func, reward_func_last = get_reward_functions_common( STATES, reward_do, effort_do, 
-                                                             reward_completed, cost_completed )
-T = get_transition_prob(STATES, EFFICACY)
-
-V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy_prob_rewards( STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR_COMMON, 
-                                                             reward_func, reward_func_last, T )
-
-
-plt.figure(figsize=(6,4), dpi=100)
-plt.hlines( np.where(policy_opt[0, :] == 0)[0][0], 
-           0, 8, color = 'brown', linewidth=2)
-
-discount_factor_reward = 0.9
-discount_factor_cost = 0.7
-reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, reward_do, 
-                                                                                 effort_do, reward_completed, cost_completed )
-T = get_transition_prob(STATES, EFFICACY)
-
-V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
-                                              HORIZON, discount_factor_reward, discount_factor_cost, 
-                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
-
-work = np.full(HORIZON, np.nan)
-for i in range(HORIZON):
-    
-    w = np.where(policy_opt_full[HORIZON-1-i][0, :] == 0)[0]
-    if w.size > 0 : work[i] = w[0]
-
-plt.plot(work[:-1], color = 'tab:blue', linewidth=2)
-
-discount_factor_reward = 0.7
-discount_factor_cost = 0.9
-reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, reward_do, 
-                                                                                 effort_do, reward_completed, cost_completed )
-T = get_transition_prob(STATES, EFFICACY)
-
-V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
-                                              HORIZON, discount_factor_reward, discount_factor_cost, 
-                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
-
-work = np.full(HORIZON, np.nan)
-for i in range(HORIZON):
-    
-    w = np.where(policy_opt_full[HORIZON-1-i][0, :] == 0)[0]
-    if w.size > 0 : work[i] = w[0]
-
-plt.plot(work[:-1], color = 'tab:blue', alpha=0.5, linewidth=2)
-
-plt.xlabel('timestep')
-plt.ylabel('intended time of starting')
+colorbar.set_ticklabels(['WORK', 'SHIRK'])  
 
 #%%
 # changing relative discounts, plot
@@ -247,7 +187,8 @@ axs2.set_yticklabels(['DO', 'DON\'T'])
 axs2.legend(loc = 'center left')
 
 #%%
-# avg finishing times and rates 
+# avg finishing times and rates for same discount, diff, precommit 
+
 N_runs = 1000
 initial_state = 0
 
@@ -332,13 +273,14 @@ axs.hist([finishing_times_same_discount,
           finishing_times_precommit,
           finishing_times_diff_discount],
          density =True,
-         bins = np.arange(0,HORIZON,1),
+         bins = np.arange(0,HORIZON+2,1),
          color=[mpl.colors.to_rgba('tab:blue', alpha=0.3), 
                 mpl.colors.to_rgba('tab:blue', alpha=0.6),
                 'tab:blue'],
          stacked=True)
 axs.set_xlabel('finishing times')
 axs.set_ylabel('density')
+axs.set_xticks([0, 2, 4, 6, 8, 10])
 sns.despine()
 
 plt.figure(figsize=(5,4), dpi = 100)
@@ -365,3 +307,63 @@ plt.vlines(np.where(rewards-efforts == np.max(rewards-efforts))[0][0],
 plt.ylim(0.2, 1.5)
 plt.legend(frameon=False)
 sns.despine()
+
+#%%
+# show reversals with delay 
+
+reward_do = 0.0
+effort_do = -1.0
+reward_completed = 4.0
+cost_completed = -0.0
+
+# solve for common discount case
+reward_func, reward_func_last = get_reward_functions_common( STATES, reward_do, effort_do, 
+                                                             reward_completed, cost_completed )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy_prob_rewards( STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR_COMMON, 
+                                                             reward_func, reward_func_last, T )
+
+
+plt.figure(figsize=(6,4), dpi=100)
+plt.hlines( np.where(policy_opt[0, :] == 0)[0][0], 
+           0, 8, color = 'brown', linewidth=2)
+
+discount_factor_reward = 0.9
+discount_factor_cost = 0.7
+reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, reward_do, 
+                                                                                 effort_do, reward_completed, cost_completed )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
+                                              HORIZON, discount_factor_reward, discount_factor_cost, 
+                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
+
+work = np.full(HORIZON, np.nan)
+for i in range(HORIZON):
+    
+    w = np.where(policy_opt_full[HORIZON-1-i][0, :] == 0)[0]
+    if w.size > 0 : work[i] = w[0]
+
+plt.plot(work[:-1], color = 'tab:blue', linewidth=2)
+
+discount_factor_reward = 0.7
+discount_factor_cost = 0.9
+reward_func, cost_func, reward_func_last, cost_func_last = get_reward_functions( STATES, reward_do, 
+                                                                                 effort_do, reward_completed, cost_completed )
+T = get_transition_prob(STATES, EFFICACY)
+
+V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff_discount_factors( STATES, ACTIONS, 
+                                              HORIZON, discount_factor_reward, discount_factor_cost, 
+                                              reward_func, cost_func, reward_func_last, cost_func_last, T )
+
+work = np.full(HORIZON, np.nan)
+for i in range(HORIZON):
+    
+    w = np.where(policy_opt_full[HORIZON-1-i][0, :] == 0)[0]
+    if w.size > 0 : work[i] = w[0]
+
+plt.plot(work[:-1], color = 'tab:blue', alpha=0.5, linewidth=2)
+
+plt.xlabel('timestep')
+plt.ylabel('intended time of starting')

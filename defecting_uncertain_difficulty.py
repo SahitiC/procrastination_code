@@ -74,7 +74,7 @@ REWARD_PASS = 4.0
 REWARD_FAIL = -4.0
 REWARD_SHIRK = 0.5
 EFFORT_TRY = -0.1 # effort to check 
-EFFORT_WORK = [-0.1, -1.0] # effort to complete task from one of the difficulty states
+EFFORT_WORK = [-0.1, -2.0] # effort to complete task from one of the difficulty states
 EFFORT_SHIRK = -0 
 REWARD_COMPLETED = REWARD_SHIRK
 
@@ -117,8 +117,6 @@ axs1.set_yticks([0,1])
 axs1.set_yticklabels(['WORK', 'SHIRK'])
 axs1.set_ylabel('policy')
 
-
-
 #%%
 
 # solving for policies for a range of probabilities
@@ -159,7 +157,7 @@ plt.title(f'efficacy = {EFFICACY}')
 # demonstration of discounting
 
 discount_factor = 1.0
-efficacy = 0.5
+efficacy = 0.6
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_TRY,
@@ -265,9 +263,9 @@ sns.despine()
 # completion rates can be improved by improving reward
 N_runs  = 1000
 initial_state = 2
-completion_times = np.full((N_runs, 5), np.nan)
-completion_rates = np.zeros((N_runs, 5))
-rewards = np.array([2.5, 3.0, 4.0, 5.0, 6.0])
+completion_times = np.full((N_runs, 4), np.nan)
+completion_rates = np.zeros((N_runs, 4))
+rewards = np.array([ 4.0, 5.0, 6.0, 7.0])
 efficacy=0.6
 
 for i_r, reward_pass in enumerate(rewards):

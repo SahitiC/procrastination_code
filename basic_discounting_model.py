@@ -79,12 +79,12 @@ ACTIONS[:-1] = [ ['work', 'shirk'] for i in range( len(STATES)-1 )] # actions fo
 ACTIONS[-1] =  ['completed'] # actions for final state
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 1.0 # discounting factor
+DISCOUNT_FACTOR = 0.9 # discounting factor
 EFFICACY = 0.6 # self-efficacy (probability of progress on working)
 
 # utilities :
-REWARD_PASS = 2.0 
-REWARD_FAIL = -2.0
+REWARD_PASS = 4.0 
+REWARD_FAIL = -4.0
 REWARD_SHIRK = 0.5
 EFFORT_WORK = -0.4
 EFFORT_SHIRK = -0 
@@ -195,80 +195,6 @@ for i_state in range(N_INTERMEDIATE_STATES+1):
     plt.title(f'efficacy = {EFFICACY}, state = {i_state}')
     plt.show()
     
-    
-#%%
-# start times and completion times vs efficacy
-    
-efficacys = np.linspace(0, 1, 20) # vary efficacy 
-
-# arrays to store no. of runs where task was finished 
-N_runs = 1000 # no. of runs for each parameter set
-completion_times = np.full((N_runs, len(efficacys)), np.nan)
-start_works = np.full( (len(efficacys), N_INTERMEDIATE_STATES+1), np.nan )
-reward_pass = 4
-reward_fail = -4
-
-for i_efficacy, efficacy in enumerate(efficacys):
-    
-    # get optimal policy for current parameter set
-    reward_func, reward_func_last = get_reward_functions(STATES, reward_pass, reward_fail, REWARD_SHIRK, 
-                                                         REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
-    T = get_transition_prob(STATES, efficacy)
-    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
-                                  reward_func, reward_func_last, T)
-    
-    for i_state in range(N_INTERMEDIATE_STATES+1):
-        
-        # find timepoints where it is optimal to work (when task not completed, state=0)
-        start_work = np.where( policy_opt[i_state, :] == 0 )[0]
-        
-        if len(start_work) > 0 :
-            start_works[i_efficacy, i_state] = start_work[0] # first time to start working
-
-    
-    # run forward (N_runs no. of times), count number of times task is finished for each policy
-    initial_state = 0
-    for i in range(N_runs):
-         
-        s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
-        if 2 in s: 
-            completion_times[i, i_efficacy] = np.where(s==2)[0][0]
-            
-fig, axs = plt.subplots(figsize=(6,4), dpi=100)
-
-mean = np.nanmean(completion_times, axis = 0) 
-std = np.nanstd(completion_times, axis = 0)/np.sqrt(1000)
-axs.plot(efficacys,
-         mean, 
-         linewidth = 2,
-         marker = 'o',
-         color = 'tab:blue')
-
-axs.fill_between(efficacys,
-                 mean-std,
-                 mean+std,
-                 alpha=0.3,
-                 color = 'tab:blue')
-
-axs.set_xlabel('efficacy')
-axs.set_ylabel('avg completion time', color='tab:blue')
-axs.tick_params(axis='y', labelcolor='tab:blue')
-axs.set_xlim(0.2,1)
-axs.set_ylim(5.8,10)
-
-ax2 = axs.twinx()
-ax2.plot(efficacys,
-         start_works[:, 0],
-         linewidth = 2,
-         color='tomato')
-ax2.plot(efficacys,
-         start_works[:, 1],
-         linewidth = 2,
-         color='brown')
-ax2.set_ylabel('starting time', color='brown', rotation = 270, labelpad=15)
-ax2.tick_params(axis='y', labelcolor='brown')
-ax2.set_ylim(5.8,10)
-
 #%%
 # final plots
 
@@ -298,7 +224,7 @@ for i_state, state in enumerate(STATES[:-1]):
                  linewidth = 2)
 
 plt.xlabel('timesteps')
-plt.ylabel('q values')
+plt.ylabel('Q-values')
 sns.despine()
 
 # plot trajectories
@@ -320,9 +246,83 @@ plt.xlabel('timesteps')
 plt.ylabel('state')
 plt.yticks([0,1,2])
 sns.despine()
+    
+    
+#%%
+# start times and completion times vs efficacy
+    
+efficacys = np.linspace(0, 1, 20) # vary efficacy 
+
+# arrays to store no. of runs where task was finished 
+N_runs = 1000 # no. of runs for each parameter set
+completion_times = np.full((N_runs, len(efficacys)), np.nan)
+start_works = np.full( (len(efficacys), N_INTERMEDIATE_STATES+1), np.nan )
+
+for i_efficacy, efficacy in enumerate(efficacys):
+    
+    # get optimal policy for current parameter set
+    reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
+                                                         REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
+    T = get_transition_prob(STATES, efficacy)
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
+                                  reward_func, reward_func_last, T)
+    
+    for i_state in range(N_INTERMEDIATE_STATES+1):
+        
+        # find timepoints where it is optimal to work (when task not completed, state=0)
+        start_work = np.where( policy_opt[i_state, :] == 0 )[0]
+        
+        if len(start_work) > 0 :
+            start_works[i_efficacy, i_state] = start_work[0] # first time to start working
+
+    
+    # run forward (N_runs no. of times), count number of times task is finished for each policy
+    initial_state = 0
+    for i in range(N_runs):
+         
+        s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
+        if 2 in s: 
+            completion_times[i, i_efficacy] = np.where(s==2)[0][0]
+            
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
+
+axs.plot(efficacys,
+         start_works[:, 0],
+         linewidth = 2,
+         color='tomato')
+axs.plot(efficacys,
+         start_works[:, 1],
+         linewidth = 2,
+         color='brown')
+axs.set_ylabel('starting time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
+axs.set_ylim(5.8,10)
+
+ax2 = axs.twinx()
+mean = np.nanmean(completion_times, axis = 0) 
+std = np.nanstd(completion_times, axis = 0)/np.sqrt(1000)
+ax2.plot(efficacys,
+         mean, 
+         linewidth = 2,
+         marker = 'o',
+         color = 'tab:blue')
+
+
+
+ax2.fill_between(efficacys,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tab:blue')
+
+ax2.set_xlabel('efficacy')
+ax2.set_ylabel('avg completion time', color='tab:blue', rotation = 270, labelpad=15)
+ax2.tick_params(axis='y', labelcolor='tab:blue')
+ax2.set_xlim(0.2,1)
+ax2.set_ylim(5.8,10)
 
 #%%
-# completion times and rate improved by greater rewards for completion
+# completion times and rate improved by greater rewards for completion, lesser efforts
 
 N_runs  = 1000
 initial_state = 0
@@ -330,14 +330,13 @@ completion_times = np.full((N_runs, 6), np.nan)
 completion_rates = np.zeros((N_runs, 6))
 efforts = np.array([0.0, -0.1, -0.2, -0.4, -0.6, -0.8])
 
-efficacy = 0.6
 
 for i_e, effort_work in enumerate(efforts):
     
     
     reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                          REWARD_COMPLETED, effort_work, EFFORT_SHIRK)
-    T = get_transition_prob(STATES, efficacy)
+    T = get_transition_prob(STATES, EFFICACY)
     V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
     

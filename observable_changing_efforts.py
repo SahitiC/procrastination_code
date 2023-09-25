@@ -60,7 +60,7 @@ ACTIONS = [ ['work', 'shirk'] for i in range( len(STATES)-1 ) ]
 ACTIONS.append(['completed']) 
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 1.0 # discounting factor
+DISCOUNT_FACTOR = 1.0# discounting factor
 EFFICACY = 0.7# self-efficacy (probability of progress on working) in non-start/finished state
 
 # utilities :
@@ -73,9 +73,9 @@ REWARD_COMPLETED = REWARD_SHIRK
 
 # envt dynmics : transitions between difficulty states independent of actions
 
-# DYNAMICS = np.array( [[0.9, 0.1, 0.0],
-#                       [0.9, 0.1, 0.0],
-#                       [0.0, 0.9, 0.1]] ) 
+DYNAMICS = np.array( [[0.9, 0.1, 0.0],
+                      [0.9, 0.1, 0.0],
+                      [0.0, 0.9, 0.1]] ) 
 
 # DYNAMICS = np.array( [[1.0, 0.0, 0.0],
 #                       [0.05, 0.95, 0.0],
@@ -83,9 +83,9 @@ REWARD_COMPLETED = REWARD_SHIRK
 # DYNAMICS = np.array( [[0.2, 0.2, 0.6],
 #                       [0.6, 0.2, 0.2],
 #                       [0.2, 0.6, 0.2]] ) # cyclic
-DYNAMICS = np.array( [[1.0, 0.0, 0.0],
-                      [0.0, 1.0, 0.0],
-                      [0.0, 0.0, 1.0]] ) # identity
+# DYNAMICS = np.array( [[1.0, 0.0, 0.0],
+#                       [0.0, 1.0, 0.0],
+#                       [0.0, 0.0, 1.0]] ) # identity
 
     
 #%%
@@ -98,7 +98,7 @@ V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HOR
                               reward_func, reward_func_last, T)
 
 # plots of policies and values
-colors = plt.cm.Reds(np.linspace(0.1,0.9,len(STATES)))
+colors = plt.cm.Reds(np.linspace(0.3,0.9,len(STATES)))
 lines = ['--', ':']
 fig, axs = plt.subplots( figsize = (5, 4), dpi=100 )
 fig1, axs1 = plt.subplots( figsize = (5, 4), dpi=100 )
@@ -119,7 +119,7 @@ handles.append(axs.plot([], [], color = 'black', linestyle = '--', label = '$Q(a
 handles.append(axs.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=$ shirk$)$'))
 axs.legend()
 axs.set_xlabel('timesteps')
-axs1.legend(frameon=False, title='States', title_fontsize=18)
+#axs1.legend(frameon=False, title='States', title_fontsize=18)
 axs1.set_xlabel('timesteps', fontsize=20)
 axs1.set_yticks([0,1])
 axs1.set_yticklabels(['WORK', 'SHIRK'])

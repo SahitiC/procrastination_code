@@ -220,11 +220,11 @@ for i_prob, difficulty_probability in enumerate(probabilities):
          
         s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
         
-        if 3 in s: finishing_times[i, i_prob, 0] = np.where(s==3)[0][0]
-        if 1 in s: 
-            finishing_times[i, i_prob, 1] = 0
-        elif 2 in s:
-            finishing_times[i, i_prob, 1] = 1
+        if 3 in s: 
+            if 1 in s: 
+                finishing_times[i, i_prob, 0] =  np.where(s==3)[0][0]
+            elif 2 in s:
+                finishing_times[i, i_prob, 1] =  np.where(s==3)[0][0]
               
 plt.figure(figsize=(5,4), dpi=100)
 plt.plot(probabilities, 
@@ -232,20 +232,32 @@ plt.plot(probabilities,
          linewidth = 2,
         color='tab:blue',
         label='check')
-mean = np.nanmean(finishing_times, axis=0)
-std = np.nanstd(finishing_times, axis=0)/np.sqrt(N_runs)
+mean = np.nanmean(finishing_times[:,:,0], axis=0)
+std = np.nanstd(finishing_times[:,:,0], axis=0)/np.sqrt(N_runs)
 plt.plot(probabilities,
         mean,
         linewidth = 2,
         color='brown',
-        label='work')
+        label='work in s=0')
 plt.fill_between(probabilities,
                  mean-std,
                  mean+std,
                  alpha=0.3,
                  color = 'brown')
+mean = np.nanmean(finishing_times[:,:,1], axis=0)
+std = np.nanstd(finishing_times[:,:,1], axis=0)/np.sqrt(N_runs)
+plt.plot(probabilities,
+        mean,
+        linewidth = 2,
+        color='tomato',
+        label='work in s=1')
+plt.fill_between(probabilities,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tomato')
 plt.xlabel('probability of task being easy')
-plt.ylabel('avg time of action')
+plt.ylabel('avg time completion of action')
 plt.legend(frameon=False)
 sns.despine()
 

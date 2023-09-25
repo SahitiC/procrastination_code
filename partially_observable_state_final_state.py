@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['font.size'] = 16
 mpl.rcParams['lines.linewidth'] = 2
+plt.rcParams['text.usetex'] = False
 import seaborn as sns
 import time
 import pomdp_algms
@@ -291,7 +292,7 @@ axs.fill_between(priors,
                  alpha=0.3,
                  color = 'brown')
 
-axs.set_xlabel('wrong prior prob (s=1)')
+axs.set_xlabel('prior prob (s=1)')
 axs.set_ylabel('avg submission time', color='brown')
 axs.tick_params(axis='y', labelcolor='brown')
 axs.vlines(0.4,

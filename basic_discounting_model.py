@@ -8,7 +8,7 @@ only comes at the deadline (which can be negative to positive based on state at 
 
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 14
+mpl.rcParams['font.size'] = 16
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
@@ -200,7 +200,7 @@ for i_state in range(N_INTERMEDIATE_STATES+1):
 
 # demonstration of discounting
 
-discount_factor = 1.0
+discount_factor = 0.9
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
@@ -321,21 +321,23 @@ ax2.tick_params(axis='y', labelcolor='tab:blue')
 ax2.set_xlim(0.2,1)
 ax2.set_ylim(5.8,10)
 
+plt.savefig('writing/figures_thesis/vectors/basic_case_starting_times.svg')
+
 #%%
 # completion times and rate improved by greater rewards for completion, lesser efforts
 
 N_runs  = 1000
 initial_state = 0
-completion_times = np.full((N_runs, 6), np.nan)
-completion_rates = np.zeros((N_runs, 6))
-efforts = np.array([0.0, -0.1, -0.2, -0.4, -0.6, -0.8])
+completion_times = np.full((N_runs, 8), np.nan)
+completion_rates = np.zeros((N_runs, 8))
+rewards = np.array([0, 1, 2, 3, 4, 5, 6, 7])
 
 
-for i_e, effort_work in enumerate(efforts):
+for i_r, reward in enumerate(rewards):
     
     
-    reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
-                                                         REWARD_COMPLETED, effort_work, EFFORT_SHIRK)
+    reward_func, reward_func_last = get_reward_functions(STATES, reward, REWARD_FAIL, REWARD_SHIRK, 
+                                                         REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
     T = get_transition_prob(STATES, EFFICACY)
     V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
                                   reward_func, reward_func_last, T)
@@ -345,34 +347,34 @@ for i_e, effort_work in enumerate(efforts):
         s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
         #append completion time if task is completed
         if 2 in s: 
-            completion_rates[i, i_e] = 1.0
-            completion_times[i, i_e] = np.where(s==2)[0][0]
+            completion_rates[i, i_r] = 1.0
+            completion_times[i, i_r] = np.where(s==2)[0][0]
         
 fig, axs = plt.subplots(figsize=(6,4), dpi=100)
 
 mean = np.nanmean(completion_times, axis = 0) 
 std = np.nanstd(completion_times, axis = 0)/np.sqrt(1000)
-axs.plot(efforts,
+axs.plot(rewards,
          mean, 
          linestyle = '--',
          linewidth = 2,
          marker = 'o', markersize = 5,
          color = 'brown')
 
-axs.fill_between(efforts,
+axs.fill_between(rewards,
                  mean-std,
                  mean+std,
                  alpha=0.3,
                  color = 'brown')
 
-axs.set_xlabel('effort to work')
+axs.set_xlabel('reward on completion')
 axs.set_ylabel('avg completion time', color='brown')
 axs.tick_params(axis='y', labelcolor='brown')
 
 
 ax2 = axs.twinx()
 mean = np.nanmean(completion_rates, axis = 0)
-ax2.plot(efforts,
+ax2.plot(rewards,
          mean,
          linewidth = 3,
          color='tab:blue')

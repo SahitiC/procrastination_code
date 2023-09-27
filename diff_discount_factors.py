@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 14
+mpl.rcParams['font.size'] = 16
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 import mdp_algms
 import seaborn as sns
+plt.rcParams['text.usetex'] = True
 
 #%%
 
@@ -96,6 +97,19 @@ V_opt_full, policy_opt_full, Q_values_full =  mdp_algms.find_optimal_policy_diff
 effective_policy =  np.array([policy_opt_full[HORIZON-1-i][0][i] for i in range(HORIZON)]) # actual policy followed by agent
 
 
+#%%
+# policy evaluation to get positive and negative values associated with the optimal policy, seprately
+V_r = []
+V_c = []
+for i_timestep in range(HORIZON-1, -1, -1):
+    
+    print(i_timestep)
+    
+    v_r, v_c = mdp_algms.policy_eval_diff_discount_factors(STATES, i_timestep, HORIZON, reward_func_last, cost_func_last, reward_func, cost_func,
+                                          T, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, policy_opt_full[i_timestep].astype(int) )
+
+    V_r.append(v_r[0,HORIZON-i_timestep-1])
+    V_c.append(v_c[0,HORIZON-i_timestep-1])
 #%%
 ### THIS WORKS ONLY FOR A SMALL MDP WHERE ONLY ONE STATE HAS TWO CHOICES OF ACTIONS WITH A SMALL HORIZON ###
 

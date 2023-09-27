@@ -226,23 +226,25 @@ def find_optimal_policy_diff_discount_factors_brute_force(states, actions, horiz
     
 
 # generate return from policy
-def policy_eval_diff_discount_factors(states, i_timestep, reward_func_last, effort_func_last, reward_func, effort_func,
+def policy_eval_diff_discount_factors(states, i_timestep, horizon, reward_func_last, effort_func_last, reward_func, effort_func,
                                       T, discount_factor_reward, discount_factor_effort, policy_all):
 
-    V_r = np.full( (len(states), i_timestep+2), np.nan)
-    V_c = np.full( (len(states), i_timestep+2), np.nan)     
+    V_r = np.full( (len(states), horizon+1), np.nan)
+    V_c = np.full( (len(states), horizon+1), np.nan)     
     
     V_r[:, -1] = reward_func_last
     V_c[:, -1] = effort_func_last
     
-    for i_iter in range(i_timestep, -1, -1): 
+    for i_iter in range(horizon-1, horizon-1-i_timestep-1, -1): 
+        
+        print(policy_all[:, i_iter])
         
         for i_state, state in enumerate(states):
             
-            V_r[i_state, i_iter] = reward_func[i_state][policy_all[i_state, i_iter]] + discount_factor_reward * (
+            V_r[i_state, i_iter] = T[i_state][policy_all[i_state, i_iter]] @ reward_func[i_state][policy_all[i_state, i_iter]].T + discount_factor_reward * (
                                    T[i_state][policy_all[i_state, i_iter]] @ V_r[states, i_iter+1])
             
-            V_c[i_state, i_iter] = effort_func[i_state][policy_all[i_state, i_iter]] + discount_factor_effort * (
+            V_c[i_state, i_iter] = T[i_state][policy_all[i_state, i_iter]] @ effort_func[i_state][policy_all[i_state, i_iter]].T + discount_factor_effort * (
                            T[i_state][policy_all[i_state, i_iter]] @ V_c[states, i_iter+1])
     
     return V_r, V_c

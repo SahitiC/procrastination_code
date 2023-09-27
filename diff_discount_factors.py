@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 16
+mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
 import mdp_algms
 import seaborn as sns
-plt.rcParams['text.usetex'] = True
+plt.rcParams['text.usetex'] = False
 
 #%%
 
@@ -154,6 +154,8 @@ ax.tick_params()
 colorbar = ax.collections[0].colorbar
 colorbar.set_ticks([0.25, 0.75])
 colorbar.set_ticklabels(['WORK', 'SHIRK'])  
+plt.savefig('writing/figures_thesis/vectors/diff_discounts_defection.svg',
+            format='svg', dpi=300)
 
 #%%
 # changing relative discounts, plot
@@ -297,6 +299,9 @@ axs.set_ylabel('density')
 axs.set_xticks([0, 2, 4, 6, 8, 10])
 sns.despine()
 
+plt.savefig('writing/figures_thesis/vectors/diff_discounts_finishing_times.svg',
+            format='svg', dpi=300)
+
 plt.figure(figsize=(5,4), dpi = 100)
 plt.bar(['same \n discount', 'pre-commit', 'different \n discounts'],
         [np.mean(finishing_rates_same_discount), 
@@ -307,20 +312,24 @@ plt.xlabel('policy')
 plt.ylabel('completion rates')
 sns.despine()
 
+plt.savefig('writing/figures_thesis/vectors/diff_discounts_finishing_rates.svg',
+            format='svg', dpi=300)
+
 #%%
 # showing preference reversals
-rewards = 1.5 * ( 0.9**np.arange(0,10,1) )
+rewards = 2.0 * ( 0.9**np.arange(0,10,1) )
 efforts = 1.0 * ( 0.9**np.arange(0,10,1) )
 plt.figure(figsize=(4,4), dpi=100)
 plt.plot(rewards, label='reward', color='tab:blue', linewidth=2)
 plt.plot(efforts, label ='efforts', color='brown', linewidth=2)
 plt.xlabel('timestep')
-plt.ylabel('value')
+plt.ylabel('discounted rewards')
 plt.vlines(np.where(rewards-efforts == np.max(rewards-efforts))[0][0],
-           0.2, 1.5, color='black')
-plt.ylim(0.2, 1.5)
+           0.0, 2.1, color='black')
+plt.ylim(0.0, 2.1)
 plt.legend(frameon=False)
 sns.despine()
+plt.savefig('writing/figures_thesis/vectors/diff_discounts_same_discount.svg')
 
 #%%
 # show reversals with delay 
@@ -381,3 +390,8 @@ plt.plot(work[:-1], color = 'tab:blue', alpha=0.5, linewidth=2)
 
 plt.xlabel('timestep')
 plt.ylabel('intended time of starting')
+sns.despine()
+plt.savefig('writing/figures_thesis/vectors/diff_discounts_delays.svg',
+            format='svg', dpi=300)
+
+#%%

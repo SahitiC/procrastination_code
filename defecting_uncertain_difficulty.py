@@ -8,10 +8,10 @@ the simple case for assignment submission in efficacy_model.py
 
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 16
+mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = True
+plt.rcParams['text.usetex'] = False
 import mdp_algms
 import seaborn as sns
 
@@ -66,7 +66,7 @@ ACTIONS.append(['completed'])
 
 HORIZON = 10 # deadline
 DISCOUNT_FACTOR = 0.9 # discounting factor
-EFFICACY = 0.5 # self-efficacy (probability of progress on working) in non-start/finished state
+EFFICACY = 0.6 # self-efficacy (probability of progress on working) in non-start/finished state
 DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 
 # utilities :
@@ -190,7 +190,10 @@ plt.yticks(STATES)
 plt.ylabel('state')
 sns.despine()
 
-#%%
+plt.savefig('writing/figures_thesis/vectors/planned_defections_no_discount.svg',
+            format='svg', dpi=300)
+
+ #%%
 # shifting of checking time wrt finishing with probability
 
 # solving for policies for a range of probabilities
@@ -259,18 +262,21 @@ plt.ylabel('avg time completion of action')
 plt.legend(frameon=False)
 sns.despine()
 
+plt.savefig('writing/figures_thesis/vectors/planned_defections_checking_times.svg',
+            format='svg', dpi=300)
+
 #%%
 # completion rates can be improved by improving reward
 N_runs  = 1000
 initial_state = 2
-completion_times = np.full((N_runs, 4), np.nan)
-completion_rates = np.zeros((N_runs, 4))
-rewards = np.array([ 4.0, 5.0, 6.0, 7.0])
+completion_times = np.full((N_runs, 5), np.nan)
+completion_rates = np.zeros((N_runs, 5))
+rewards = np.array([0.0, 1.0, 2.0, 4.0, 6.0])
 efficacy=0.6
 
 for i_r, reward_pass in enumerate(rewards):
     
-    reward_fail = 0.0
+    reward_fail = -4.0
     
     reward_func, reward_func_last = get_reward_functions(STATES, reward_pass, reward_fail, REWARD_SHIRK, 
                                                          REWARD_COMPLETED, EFFORT_TRY, EFFORT_WORK, EFFORT_SHIRK)
@@ -320,3 +326,6 @@ ax2.set_ylabel('avg completion rate',
                rotation=270,
                labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+plt.savefig('writing/figures_thesis/vectors/planned_defections_rewards.svg',
+            format='svg', dpi=300)

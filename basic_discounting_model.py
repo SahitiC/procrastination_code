@@ -8,10 +8,10 @@ only comes at the deadline (which can be negative to positive based on state at 
 
 import numpy as np
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 16
+mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 import matplotlib.pyplot as plt
-plt.rcParams['text.usetex'] = True
+plt.rcParams['text.usetex'] = False
 import mdp_algms
 import seaborn as sns
 
@@ -315,7 +315,7 @@ ax2.fill_between(efficacys,
                  alpha=0.3,
                  color = 'tab:blue')
 
-ax2.set_xlabel('efficacy')
+axs.set_xlabel('efficacy')
 ax2.set_ylabel('avg completion time', color='tab:blue', rotation = 270, labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
 ax2.set_xlim(0.2,1)
@@ -324,7 +324,7 @@ ax2.set_ylim(5.8,10)
 plt.savefig('writing/figures_thesis/vectors/basic_case_starting_times.svg')
 
 #%%
-# completion times and rate improved by greater rewards for completion, lesser efforts
+# completion times and rate improved by greater rewards for completion
 
 N_runs  = 1000
 initial_state = 0
@@ -381,6 +381,67 @@ ax2.plot(rewards,
 ax2.set_ylabel('avg completion rate', color='tab:blue', rotation = 270, labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
 
+plt.savefig('writing/figures_thesis/vectors/basic_case_rewards.svg')
+
+#%%
+# completion times and rate improved by greater rewards for completion
+
+N_runs  = 1000
+initial_state = 0
+completion_times = np.full((N_runs, 5), np.nan)
+completion_rates = np.zeros((N_runs, 5))
+efforts = np.array([-0.8, -0.6, -0.4, -0.2, 0.0])
+
+
+for i_e, effort in enumerate(efforts):
+    
+    
+    reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
+                                                         REWARD_COMPLETED, effort, EFFORT_SHIRK)
+    T = get_transition_prob(STATES, EFFICACY)
+    V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy(STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR, 
+                                  reward_func, reward_func_last, T)
+    
+    for i in range(N_runs):
+         
+        s, a, v = mdp_algms.forward_runs(policy_opt, V_opt, initial_state, HORIZON, STATES, T)
+        #append completion time if task is completed
+        if 2 in s: 
+            completion_rates[i, i_e] = 1.0
+            completion_times[i, i_e] = np.where(s==2)[0][0]
+        
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
+
+mean = np.nanmean(completion_times, axis = 0) 
+std = np.nanstd(completion_times, axis = 0)/np.sqrt(1000)
+axs.plot(efforts,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         color = 'brown')
+
+axs.fill_between(efforts,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'brown')
+
+axs.set_xlabel('effort to work')
+axs.set_ylabel('avg completion time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
+
+
+ax2 = axs.twinx()
+mean = np.nanmean(completion_rates, axis = 0)
+ax2.plot(efforts,
+         mean,
+         linewidth = 3,
+         color='tab:blue')
+ax2.set_ylabel('avg completion rate', color='tab:blue', rotation = 270, labelpad=15)
+ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+plt.savefig('writing/figures_thesis/vectors/basic_case_efforts.svg')
 
 #%%
 #immediate rewards: example policy
@@ -445,20 +506,22 @@ plt.xlabel('efficacy')
 plt.ylabel('Proportion of finished runs')
 sns.despine()
 
+plt.savefig('writing/figures_thesis/vectors/basic_case_imm_rewards.svg')
+
 #%%
 # legends 
-colors = ["brown",
-          mpl.colors.to_rgba('tab:blue', alpha=0.5),#mpl.colors.to_rgba('tab:blue', alpha=0.5),
-         "tab:blue"]
+colors = [mpl.colors.to_rgba('tab:blue', alpha=0.5),
+          "tab:blue"#mpl.colors.to_rgba('tab:blue', alpha=0.5),
+          ]
 # cmap= mpl.colormaps.get_cmap('viridis')
 # colors = [cmap(1.0), cmap(0.5), cmap(0.0)]
-plt.figure(figsize=(0.5,0.5), dpi=100)
+plt.figure(figsize=(0.5,0.5), dpi=300)
 f = lambda m,c: plt.plot([],[],marker=m, markersize=15, color=c, ls="none")[0]
-handles = [f("s", colors[i]) for i in range(3)]
-labels = [r"$\gamma_r=\gamma_c$", r"$\gamma_r<\gamma_c$", r"$\gamma_r>\gamma_c$"]
+handles = [f("s", colors[i]) for i in range(2)]
+labels = ["immediate", "delayed"]
 legend = plt.legend(handles, labels, loc=3, 
-                    framealpha=1, frameon=False) 
-                    #title='condition', title_fontsize=18)
+                    framealpha=1, frameon=False, 
+                    title='condition', title_fontsize=18)
 fig  = legend.figure
 fig.canvas.draw()
 plt.axis('off')

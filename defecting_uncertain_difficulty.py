@@ -65,7 +65,7 @@ ACTIONS = [ ['work', 'shirk'] for i in range( len(STATES)-1 ) ]
 ACTIONS.append(['completed']) 
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 0.9 # discounting factor
+DISCOUNT_FACTOR = 1.0 # discounting factor
 EFFICACY = 0.6 # self-efficacy (probability of progress on working) in non-start/finished state
 DIFFICULTY_PROBABILITY = [0.9, 0.1] # probability for difficulty states
 
@@ -104,7 +104,7 @@ for i_state, state in enumerate(STATES[:-1]):
         
         axs.plot(Q_values[i_state][i_action, :], color = colors[i_state], linestyle = lines[i_action])
         
-        
+    
 handles, labels = axs.get_legend_handles_labels()   
 handles.append(axs.plot([], [], color = 'black', linestyle = '--', label = '$Q(a=$ check or work$)$'))
 handles.append(axs.plot([], [], color = 'black', linestyle = ':', label = '$Q(a=$ shirk$)$'))
@@ -156,7 +156,7 @@ plt.title(f'efficacy = {EFFICACY}')
 #%%
 # demonstration of discounting
 
-discount_factor = 1.0
+discount_factor = 0.9
 efficacy = 0.6
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
@@ -180,17 +180,19 @@ plt.figure( figsize = (5,4), dpi = 100 )
 plt.plot(np.arange(0, HORIZON+1, 1),
          s, linewidth = 2,
          linestyle = 'dashed',
-         color='gray')
+         color='gray',
+         label = 'state')
 plt.scatter(np.arange(0, HORIZON, 1), 
             s[:-1],
             marker='s', s=100,
             c=colors_scatter)
 plt.xlabel('timesteps')
-plt.yticks(STATES)
+plt.yticks(STATES, labels=['i', 'e', 'h', 'm'])
 plt.ylabel('state')
+#plt.legend(frameon=False, loc='lower right')
 sns.despine()
 
-plt.savefig('writing/figures_thesis/vectors/planned_defections_no_discount.svg',
+plt.savefig('writing/figures_thesis/vectors/planned_defections_discounted.svg',
             format='svg', dpi=300)
 
  #%%
@@ -239,7 +241,7 @@ plt.plot(probabilities,
         mean,
         linewidth = 2,
         color='brown',
-        label='work in s=0')
+        label='work in s=e')
 plt.fill_between(probabilities,
                  mean-std,
                  mean+std,
@@ -251,7 +253,7 @@ plt.plot(probabilities,
         mean,
         linewidth = 2,
         color='tomato',
-        label='work in s=1')
+        label='work in s=h')
 plt.fill_between(probabilities,
                  mean-std,
                  mean+std,

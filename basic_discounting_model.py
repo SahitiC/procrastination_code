@@ -200,7 +200,7 @@ for i_state in range(N_INTERMEDIATE_STATES+1):
 
 # demonstration of discounting
 
-discount_factor = 0.9
+discount_factor = 1.0
 
 reward_func, reward_func_last = get_reward_functions(STATES, REWARD_PASS, REWARD_FAIL, REWARD_SHIRK, 
                                                      REWARD_COMPLETED, EFFORT_WORK, EFFORT_SHIRK)
@@ -237,7 +237,8 @@ plt.figure( figsize = (5,4), dpi = 100 )
 plt.plot(np.arange(0, HORIZON+1, 1),
          s, linewidth = 2,
          linestyle = 'dashed',
-         color='gray')
+         color='gray', 
+         label='state')
 plt.scatter(np.arange(0, HORIZON, 1), 
             s[:-1],
             marker='s', s=100,
@@ -245,8 +246,11 @@ plt.scatter(np.arange(0, HORIZON, 1),
 plt.xlabel('timesteps')
 plt.ylabel('state')
 plt.yticks([0,1,2])
+plt.legend(frameon=False)
 sns.despine()
     
+plt.savefig('writing/figures_thesis/vectors/basic_case_trajectory_no_discount.svg',
+            format='svg', dpi=300)
     
 #%%
 # start times and completion times vs efficacy
@@ -510,18 +514,20 @@ plt.savefig('writing/figures_thesis/vectors/basic_case_imm_rewards.svg')
 
 #%%
 # legends 
-colors = [mpl.colors.to_rgba('tab:blue', alpha=0.5),
-          "tab:blue"#mpl.colors.to_rgba('tab:blue', alpha=0.5),
+#plt.rcParams['text.usetex'] = True
+colors = ["gold",
+          "tab:blue",
+          "brown"#mpl.colors.to_rgba('tab:blue', alpha=0.5),
           ]
+plt.figure(figsize=(0.5,0.5), dpi=300)
 # cmap= mpl.colormaps.get_cmap('viridis')
 # colors = [cmap(1.0), cmap(0.5), cmap(0.0)]
-plt.figure(figsize=(0.5,0.5), dpi=300)
 f = lambda m,c: plt.plot([],[],marker=m, markersize=15, color=c, ls="none")[0]
-handles = [f("s", colors[i]) for i in range(2)]
-labels = ["immediate", "delayed"]
+handles = [f("s", colors[i]) for i in range(3)]
+labels = ["check", "work", "shirk"]
 legend = plt.legend(handles, labels, loc=3, 
-                    framealpha=1, frameon=False, 
-                    title='condition', title_fontsize=18)
+                    framealpha=1, frameon=False,
+                    title='actions', title_fontsize=18)
 fig  = legend.figure
 fig.canvas.draw()
 plt.axis('off')

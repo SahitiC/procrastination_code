@@ -8,7 +8,7 @@ We can have terminal states or loop through infinite trials.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-mpl.rcParams['font.size'] = 16
+mpl.rcParams['font.size'] = 14
 mpl.rcParams['lines.linewidth'] = 2
 plt.rcParams['text.usetex'] = False
 import seaborn as sns
@@ -21,7 +21,7 @@ terminal_state = 1 # 1 if terminal state existis 0 otherwise
 states = np.array( [0, 1, 2] ) # (1,0), (1,1), 2 : all non-terminal states
 actions = np.array( [0,1,2]) #'check', 'work', 'submit'
 observations = np.array( [0, 1, 2] )
-efficacy = 0.7
+efficacy = 0.6
 noise = 0.3
 discount_factor = 1.0
 db = 0.05 # discretisation of belief space
@@ -122,6 +122,9 @@ plt.xlim([0,1/db])
 plt.xlabel('belief (S=1) ')
 sns.despine()
 
+plt.savefig('writing/figures_thesis/vectors/pomdp_example_policy.svg',
+            format='svg', dpi=300)
+
 #%%
 
 # plot trajectory
@@ -164,16 +167,19 @@ plt.scatter(np.arange(len(trajectory_init_1[1])),
 
 plt.xlabel('timesteps')
 plt.ylim(top=1.0)
-plt.ylabel('belief(s=1)')
-plt.legend(title='hidden state', title_fontsize=18, 
-           frameon=False, loc='upper right')
+plt.ylabel('belief (s=1)')
+plt.legend(title='hidden state', title_fontsize=16, 
+           frameon=False)
 sns.despine()
+
+plt.savefig('writing/figures_thesis/vectors/pomdp_example_trajectories.svg',
+            format='svg', dpi=300)
 
 #%%
 
 # average time of submission and correct submission rates
 
-rewards_compl = np.array( [2.0, 3.0, 5.0, 6.0, 7.0] )
+rewards_compl = np.array( [2.0, 3.0, 5.0, 6.0, 7.0, 8.0] )
 submission_times = np.zeros((200, len(rewards_compl), 2))
 correct_submissions = np.zeros((200, len(rewards_compl)))
 
@@ -245,10 +251,202 @@ ax2.plot(rewards_compl,
          mean,
          linewidth = 3,
          color='tab:blue')
-ax2.set_ylabel('avg completion rate', color='tab:blue')
+ax2.set_ylabel('avg completion rate', 
+               color='tab:blue',
+               rotation=270,
+               labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
 fig.legend(frameon=False, title = 'hidden state', bbox_to_anchor=(0.4, 0.6))
 
+plt.savefig('writing/figures_thesis/vectors/pomdp_reward.svg',
+            format='svg', dpi=300)
+
+#%%
+# average time of submission and correct submission rates
+
+efficacys = np.array( [0.4, 0.5, 0.6, 0.7, 0.8, 0.9] )
+submission_times = np.zeros((200, len(efficacys), 2))
+correct_submissions = np.zeros((200, len(efficacys)))
+
+for i_efficacy, efficacy in enumerate(efficacys):
+    
+    # transition probabilities between states for each action 
+    t_prob = np.array( [[[1.0, 0.0, 0.0], 
+                         [0.0, 1.0, 0.0],
+                         [0.0, 0.0, 0.0]], 
+              
+                        [[1.0, 0.0, 0.0], 
+                         [0.0, 1.0-efficacy, efficacy],
+                         [0.0, 0.0, 0.0]], 
+              
+                         [[0.0, 0.0, 0.0], 
+                          [0.0, 0.0, 0.0],
+                          [0.0, 0.0, 0.0]]] )
+
+    
+    policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
+                              rewards, discount_factor, db, max_iter, eps)
+        
+    for i in range(200):
+        
+        initial_belief = np.array( [0.5, 0.5, 0.0] )
+        
+        for initial_hidden_state in range(2):    
+            
+            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
+                                                 states, observations, e_prob, t_prob, t_prob_terminal)  
+        
+            submission_times[i, i_efficacy, initial_hidden_state] = len(trajectory[1])
+        
+            if initial_hidden_state == 1:
+                correct_submissions[i, i_efficacy] = int(trajectory[1][-1]==2)
+
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
+
+mean = np.mean(submission_times[:,:,0], axis = 0)
+std = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100)
+axs.plot(efficacys,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = '0',
+         color = 'brown')
+
+axs.fill_between(efficacys,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'brown')
+
+mean = np.mean(submission_times[:,:,1], axis = 0)
+std = np.std(submission_times[:,:,1], axis = 0)/np.sqrt(100)
+axs.plot(efficacys,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = '1',
+         color = 'tomato')
+
+axs.fill_between(efficacys,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tomato')
+
+axs.set_xlabel('efficacy')
+axs.set_ylabel('avg submission time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
+
+
+ax2 = axs.twinx()
+mean = np.mean(correct_submissions, axis = 0)
+ax2.plot(efficacys,
+         mean,
+         linewidth = 3,
+         color='tab:blue')
+ax2.set_ylabel('avg completion rate', 
+               color='tab:blue',
+               rotation=270,
+               labelpad=15)
+ax2.tick_params(axis='y', labelcolor='tab:blue')
+#fig.legend(frameon=False, title = 'hidden state', bbox_to_anchor=(0.4, 0.6))
+
+plt.savefig('writing/figures_thesis/vectors/pomdp_efficacy.svg',
+            format='svg', dpi=300)
+
+#%%
+noises = np.array( [0.1, 0.2, 0.3, 0.4] )
+submission_times = np.zeros((200, len(noises), 2))
+correct_submissions = np.zeros((200, len(noises)))
+
+for i_noise, noise in enumerate(noises):
+    
+    # observation probabilities for each action
+    e_prob =  np.array( [[[1.0-noise, noise, 0.0], 
+                        [noise, 1.0-noise, 0.0],
+                        [0.0, 0.0, 1.0]], 
+                      
+                       [[0.5, 0.5, 0.0], 
+                        [0.5, 0.5, 0.0],
+                        [0.0, 0.0, 1.0]], 
+                      
+                       [[0.5, 0.5, 0.0], 
+                        [0.5, 0.5, 0.0],
+                        [0.0, 0.0, 1.0]]] )
+
+    
+    policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
+                              rewards, discount_factor, db, max_iter, eps)
+        
+    for i in range(200):
+        
+        initial_belief = np.array( [0.5, 0.5, 0.0] )
+        
+        for initial_hidden_state in range(2):    
+            
+            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
+                                                 states, observations, e_prob, t_prob, t_prob_terminal)  
+        
+            submission_times[i, i_noise, initial_hidden_state] = len(trajectory[1])
+        
+            if initial_hidden_state == 1:
+                correct_submissions[i, i_noise] = int(trajectory[1][-1]==2)
+
+fig, axs = plt.subplots(figsize=(6,4), dpi=100)
+
+mean = np.mean(submission_times[:,:,0], axis = 0)
+std = np.std(submission_times[:,:,0], axis = 0)/np.sqrt(100)
+axs.plot(noises,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = '0',
+         color = 'brown')
+
+axs.fill_between(noises,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'brown')
+
+mean = np.mean(submission_times[:,:,1], axis = 0)
+std = np.std(submission_times[:,:,1], axis = 0)/np.sqrt(100)
+axs.plot(noises,
+         mean, 
+         linestyle = '--',
+         linewidth = 2,
+         marker = 'o', markersize = 5,
+         label = '1',
+         color = 'tomato')
+
+axs.fill_between(noises,
+                 mean-std,
+                 mean+std,
+                 alpha=0.3,
+                 color = 'tomato')
+
+axs.set_xlabel('noise')
+axs.set_ylabel('avg submission time', color='brown')
+axs.tick_params(axis='y', labelcolor='brown')
+
+
+ax2 = axs.twinx()
+mean = np.mean(correct_submissions, axis = 0)
+ax2.plot(noises,
+         mean,
+         linewidth = 3,
+         color='tab:blue')
+ax2.set_ylabel('avg completion rate', 
+               color='tab:blue',
+               rotation=270,
+               labelpad=15)
+ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+plt.savefig('writing/figures_thesis/vectors/pomdp_noise.svg',
+            format='svg', dpi=300)
 
 #%%
 
@@ -296,8 +494,8 @@ axs.set_xlabel('prior prob (s=1)')
 axs.set_ylabel('avg submission time', color='brown')
 axs.tick_params(axis='y', labelcolor='brown')
 axs.vlines(0.4,
-           0, 7, color='black', linestyle='dashed')
-axs.set_ylim(0,7)
+           0, 9, color='black', linestyle='dashed')
+axs.set_ylim(0,9)
 
 
 ax2 = axs.twinx()
@@ -309,3 +507,6 @@ ax2.plot(priors,
 ax2.set_ylabel('avg completion rate', color='tab:blue',
                rotation=270, labelpad=15)
 ax2.tick_params(axis='y', labelcolor='tab:blue')
+
+plt.savefig('writing/figures_thesis/vectors/pomdp_wrong_prior.svg',
+            format='svg', dpi=300)

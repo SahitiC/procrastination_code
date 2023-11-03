@@ -1,3 +1,10 @@
+"""
+script for mdp for task completion where there are action-independant transitions
+between difficulty states where there are different costs associated with task completion. 
+The actios, reward structure are similar to previous simulations: refer to 
+basic_discounting_model.py for instance. 
+"""
+
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
@@ -60,7 +67,7 @@ ACTIONS = [ ['work', 'shirk'] for i in range( len(STATES)-1 ) ]
 ACTIONS.append(['completed']) 
 
 HORIZON = 10 # deadline
-DISCOUNT_FACTOR = 1.0# discounting factor
+DISCOUNT_FACTOR = 1.0# discount factor
 EFFICACY = 0.6# self-efficacy (probability of progress on working) in non-start/finished state
 
 # utilities :
@@ -132,7 +139,9 @@ plt.savefig('writing/figures_thesis/vectors/changing_difficulty_no_delay.svg',
 # final plots
 
 # run forward (N_runs no. of times), 
-# get distribution of finish times and compare with 
+# get distribution of finish times and compare with policy of always working 
+# (which is optimal when there are no transitions between difficulty states)
+
 N_runs  = 1000
 initial_state = 2
 policy_always_work = np.zeros(np.shape(policy_opt))

@@ -1,6 +1,6 @@
 """
-Re-creating the standard Tiger example from pomdp_py to test out the correct
-way of implementation. 
+Re-creating the standard Tiger example from pomdp_py to test out implementation
+Flexibility is tough
 """
 import pomdp_py
 from pomdp_py.utils import TreeDebugger

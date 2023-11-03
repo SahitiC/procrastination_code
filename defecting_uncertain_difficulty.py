@@ -2,8 +2,9 @@
 This is a script for an mdp when difficulty of the task 
 is uncertain and the only way to find out is to try the task. This then leads to 
 probabilistic transitions to one of N difficulty states which have different efforts 
-required to complete the task. Actions and reward structure are like
-the simple case for assignment submission in efficacy_model.py
+required to complete the task. These are subjective transitions in agent's 
+knowledge of th world rather than real transitions in the environment. 
+Actions and reward structure are like the simple case for assignment submission in basic_discounting_model.py
 """
 
 import numpy as np
@@ -17,6 +18,7 @@ import seaborn as sns
 
 #%%
 # construct reward functions
+
 def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_completed, 
                          effort_try, effort_work, effort_shirk):
     
@@ -118,8 +120,8 @@ axs1.set_yticklabels(['WORK', 'SHIRK'])
 axs1.set_ylabel('policy')
 
 #%%
+# solving for policies for a range of probabilities (of task being easy vs hard)
 
-# solving for policies for a range of probabilities
 probabilities = np.linspace(0.0, 1.0, 5)
 # optimal starting point for 4 reward regimes (change manually)
 start_works = np.full( (len(probabilities), N_DIFFICULTY_STATES+1), np.nan ) 
@@ -154,7 +156,7 @@ plt.legend()
 plt.title(f'efficacy = {EFFICACY}')
 
 #%%
-# demonstration of discounting
+# demonstration of procrastination due to discounting (no discounting vs discount factor < 1.0)
 
 discount_factor = 0.9
 efficacy = 0.6
@@ -195,8 +197,8 @@ sns.despine()
 plt.savefig('writing/figures_thesis/vectors/planned_defections_discounted.svg',
             format='svg', dpi=300)
 
- #%%
-# shifting of checking time wrt finishing with probability
+#%%
+# shifting of checking time wrt finishing as a function of difficulty probability
 
 # solving for policies for a range of probabilities
 N_runs = 1000

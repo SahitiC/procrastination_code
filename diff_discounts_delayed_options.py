@@ -1,3 +1,15 @@
+
+"""
+script for mdp for choosing between two tasks each with delayed rewards.
+The delay, rewards and costs can differ between the two options. In this case too, 
+reversals can be expected with different discount factors. Refer to diff_discount_factors.py
+for assignment submission case where choice is between shirking to get immediate rewards or working 
+either with immediate rewards on success or eward at the end. The case in this script is 
+intended to be a general version of this.
+
+INCOMPLETE analysis
+"""
+
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
@@ -6,64 +18,6 @@ import matplotlib.pyplot as plt
 import itertools
 
 #%%
-def find_optimal_policy_diff_discount_factors(states, actions, horizon, discount_factor_reward, discount_factor_cost, 
-                                             reward_func, cost_func, reward_func_last, cost_func_last, T):
-    
-    '''
-    algorithm for finding optimal policy with different exponential discount factors for 
-    rewards and efforts, for a finite horizon and discrete states/ actions; 
-    since the optimal policy can shift in time, it is found starting at every timestep
-    
-    inputs: states, actions available in each state, rewards from actions and final rewards, 
-    transition probabilities for each action in a state, discount factor, length of horizon
-    
-    outputs: optimal values, optimal policy and action q-values for each timestep and state 
-
-    '''
-
-    V_opt_full = []
-    policy_opt_full = []
-    Q_values_full = []
-
-    # solve for optimal policy at every time step
-    for i_iter in range(horizon-1, -1, -1):
-        
-        V_opt = np.zeros( (len(states), horizon+1) )
-        policy_opt = np.full( (len(states), horizon), np.nan )
-        Q_values = np.zeros( len(states), dtype = object)
-    
-        for i_state, state in enumerate(states):
-            
-            # V_opt for last time-step 
-            V_opt[i_state, -1] = ( discount_factor_reward**(horizon-i_iter) ) * reward_func_last[i_state] + (
-                                   discount_factor_cost**(horizon-i_iter) ) * cost_func_last[i_state]
-            # arrays to store Q-values for each action in each state
-            Q_values[i_state] = np.full( (len(actions[i_state]), horizon), np.nan)
-        
-        # backward induction to derive optimal policy starting from timestep i_iter 
-        for i_timestep in range(horizon-1, i_iter-1, -1):
-            
-            for i_state, state in enumerate(states):
-                
-                Q = np.full( len(actions[i_state]), np.nan) 
-                
-                for i_action, action in enumerate(actions[i_state]):
-                    
-                    # q-value for each action (bellman equation)
-                    Q[i_action] = ( discount_factor_reward**(i_timestep-i_iter) ) * reward_func[i_state][i_action][i_timestep] + (
-                                    discount_factor_cost**(i_timestep-i_iter) ) * cost_func[i_state][i_action][i_timestep] + (
-                                    T[i_state][i_action] @ V_opt[:, i_timestep+1] )
-                
-                # find optimal action (which gives max q-value)
-                V_opt[i_state, i_timestep] = np.max(Q)
-                policy_opt[i_state, i_timestep] = np.argmax(Q)
-                Q_values[i_state][:, i_timestep] = Q    
-            
-        V_opt_full.append(V_opt)
-        policy_opt_full.append(policy_opt)
-        Q_values_full.append(Q_values)
-        
-    return V_opt_full, policy_opt_full, Q_values_full
 
 # construct separate reward and effort functions
 def get_reward_functions(states, actions, reward_1, effort_1, delay_1, 
@@ -127,7 +81,7 @@ def get_transition_prob(states, efficacy):
 
 #%%
     
-# setting up the MDP     
+# instantiate MDP     
 
 # states of markov chain   
 N_OPTIONS = 2 # NO. OF OPTIONS AVAILABLE
@@ -159,6 +113,6 @@ EFFORT_2 = 0
 reward_func, reward_func_last, cost_func, cost_func_last = get_reward_functions(STATES, ACTIONS, REWARD_1, EFFORT_1, DELAY_1, REWARD_2, EFFORT_2, DELAY_2, HORIZON)
 T = get_transition_prob(STATES, EFFICACY)
 
-V_opt_full, policy_opt_full, Q_values_full = find_optimal_policy_diff_discount_factors(
+V_opt_full, policy_opt_full, Q_values_full = mdp_algms.find_optimal_policy_diff_discount_factors(
                                              STATES, ACTIONS, HORIZON, DISCOUNT_FACTOR_REWARD, DISCOUNT_FACTOR_COST, 
                                              reward_func, cost_func, reward_func_last, cost_func_last, T)

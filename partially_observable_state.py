@@ -1,15 +1,16 @@
+"""
+POMDP implementation using russel-norvig function ( uses witness-type algorithm)
+assignment submission problem where the state is partially observable. Only 2 states can be implemented
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
-from pomdp_algms import *
+from pomdp_algms_russel_norvig import *
 
 #%%
 def line_coeff(point_1, point_2):
     """
     find coefficients of a 2D line given two points 
-    
-    inputs: coordinates of the two points (tuples)
-    
-    outputs: slope and intercept of line
     """
     slope = ( point_2[1] - point_1[1] ) / ( point_2[0] - point_1[0] )
     
@@ -39,7 +40,7 @@ T_PROB = [[[1.0, 0.0],
           [[1.0, 0.0], 
            [0.0, 1.0]]]
 
-# OBSERVATION PROBABILITIES FOR EACH ACTION
+# observation probabilities for each action
 E_PROB = [[[0.9, 0.1], 
            [0.1, 0.9]], 
           
@@ -49,7 +50,7 @@ E_PROB = [[[0.9, 0.1],
           [[0.5, 0.5], 
            [0.5, 0.5]]]
 
-# REWARDS FOR EACH ACTION IN EACH STATE
+# rewards for each action in each state
 REWARDS = [[-0.1, -0.1], 
            [-1.0, -1.0], 
            [-4.0, 4.0]]

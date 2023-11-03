@@ -1,3 +1,12 @@
+"""
+script for mdp for assignment submission problem with different discount factors
+for costs and rewards, and immediate rewards. Again, there is an initial state (when assignment is not started),
+potential intermediate states, and final state of completion. At each non-completed state, there is a choice
+between actions to DO which has an immediate effort cost and also reward if succesful
+and DONT which has an immediate reward. The final state is absorbing and also has a reward 
+(usually set equivalent to rewards from shirk).  
+"""
+
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams['font.size'] = 14
@@ -158,7 +167,8 @@ plt.savefig('writing/figures_thesis/vectors/diff_discounts_defection.svg',
             format='svg', dpi=300)
 
 #%%
-# changing relative discounts, plot
+# changing relative discounts, plot intended vs real starting times
+
 discounts_cost = np.array([0.8, 0.7, 0.6, 0.5]) 
 
 colors = plt.cm.Blues(np.linspace(0.3,0.9,4)) 
@@ -203,7 +213,9 @@ axs2.set_yticklabels(['DO', 'DON\'T'])
 axs2.legend(loc = 'center left')
 
 #%%
-# avg finishing times and rates for same discount, diff, precommit 
+# avg finishing times and rates for same discount vs diff vs precommit 
+# precommit strategy is to stick with policy calculated at first timestep
+# in different discount case
 
 N_runs = 1000
 initial_state = 0
@@ -332,7 +344,7 @@ sns.despine()
 plt.savefig('writing/figures_thesis/vectors/diff_discounts_same_discount.svg')
 
 #%%
-# show reversals with delay 
+# show reversals now with delay in reward (reward on working comes at final timestep)
 
 reward_do = 0.0
 effort_do = -1.0
@@ -393,5 +405,3 @@ plt.ylabel('intended time of starting')
 sns.despine()
 plt.savefig('writing/figures_thesis/vectors/diff_discounts_delays.svg',
             format='svg', dpi=300)
-
-#%%

@@ -1,9 +1,9 @@
 """
-script for mdp for assignment submission: There is an initial state (when assignment is not started),
+script for mdp for assignment submission problem: There is an initial state (when assignment is not started),
 potential intermediate states, and final state of completion. At each non-completed state, there is a choice
 between actions to WORK which has an immediate effort cost and SHIRK which has an immediate reward. 
-The final state is absorbing and also has a reward (equivalent to rewards from shirk). The outcome from evaluation 
-only comes at the deadline (which can be negative to positive based on state at final timepoint).  
+The final state is absorbing and also has a reward (usually set equivalent to rewards from shirk). 
+The outcome from evaluation only comes at the deadline (which can be negative to positive based on state at final timepoint).  
 """
 
 import numpy as np
@@ -30,7 +30,7 @@ def get_reward_functions(states, reward_pass, reward_fail, reward_shirk, reward_
     
     return reward_func, reward_func_last
 
-#immediate rewards
+# reward function for immediate rewards
 def get_reward_functions_immediate(states, reward_work, reward_shirk, 
                                    effort_work, effort_shirk):
     
@@ -68,6 +68,7 @@ def get_transition_prob(states, efficacy):
     return T
 
 #%%
+#instantiate MDP
 
 # states of markov chain
 N_INTERMEDIATE_STATES = 1
@@ -460,7 +461,7 @@ V_opt, policy_opt, Q_values = mdp_algms.find_optimal_policy_prob_rewards(STATES,
                               reward_func, reward_func_last, T)
 
 #%%
-#immediate rewards vs delayed
+#finishing rates for immediate rewards vs delayed
     
 efficacys = np.linspace(0, 1, 10) # vary efficacy 
 policy_always_work = np.full(np.shape(policy_opt), 0) # always work policy
@@ -511,24 +512,3 @@ plt.ylabel('Proportion of finished runs')
 sns.despine()
 
 plt.savefig('writing/figures_thesis/vectors/basic_case_imm_rewards.svg')
-
-#%%
-# legends 
-#plt.rcParams['text.usetex'] = True
-colors = ["gold",
-          "tab:blue",
-          "brown"#mpl.colors.to_rgba('tab:blue', alpha=0.5),
-          ]
-plt.figure(figsize=(0.5,0.5), dpi=300)
-# cmap= mpl.colormaps.get_cmap('viridis')
-# colors = [cmap(1.0), cmap(0.5), cmap(0.0)]
-f = lambda m,c: plt.plot([],[],marker=m, markersize=15, color=c, ls="none")[0]
-handles = [f("s", colors[i]) for i in range(3)]
-labels = ["check", "work", "shirk"]
-legend = plt.legend(handles, labels, loc=3, 
-                    framealpha=1, frameon=False,
-                    title='actions', title_fontsize=18)
-fig  = legend.figure
-fig.canvas.draw()
-plt.axis('off')
-plt.show()

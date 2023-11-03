@@ -1,5 +1,5 @@
 """
-This is the script for a task where there might be another state where more work can be done. 
+POMDP for a task where there might be another state where more work can be done. 
 However, there is uncertainty whether the task can actaully be improved and can be
 resolved only by checking. Here,  it is a pomdp with 3 states 
 We can have terminal states or loop through infinite trials.
@@ -17,24 +17,25 @@ import pomdp_algms
 
 #%%
 # define the pomdp 
-terminal_state = 1 # 1 if terminal state existis 0 otherwise
-states = np.array( [0, 1, 2] ) # (1,0), (1,1), 2 : all non-terminal states
-actions = np.array( [0,1,2]) #'check', 'work', 'submit'
-observations = np.array( [0, 1, 2] )
-efficacy = 0.6
-noise = 0.3
-discount_factor = 1.0
-db = 0.05 # discretisation of belief space
-max_iter = 100 # maximum value iteration rounds
-eps = 1e-3 # diff in value (diff_value) required for value iteration convergence
+
+TERMINAL_STATE = 1 # 1 if terminal state existis 0 otherwise
+STATES = np.array( [0, 1, 2] ) # (1,0), (1,1), 2 : all non-terminal states
+ACTIONS = np.array( [0,1,2]) #'check', 'work', 'submit'
+OBSERVATIONS = np.array( [0, 1, 2] )
+EFFICACY = 0.6
+NOISE = 0.3
+DISCOUNT_FACTOR = 1.0
+DB = 0.05 # discretisation of belief space
+MAX_ITER = 100 # maximum value iteration rounds
+EPS = 1e-3 # diff in value (diff_value) required for value iteration convergence
 
 # transition probabilities between states for each action 
-t_prob = np.array( [[[1.0, 0.0, 0.0], 
+T_PROB = np.array( [[[1.0, 0.0, 0.0], 
                      [0.0, 1.0, 0.0],
                      [0.0, 0.0, 0.0]], 
           
                     [[1.0, 0.0, 0.0], 
-                     [0.0, 1.0-efficacy, efficacy],
+                     [0.0, 1.0-EFFICACY, EFFICACY],
                      [0.0, 0.0, 0.0]], 
           
                      [[0.0, 0.0, 0.0], 
@@ -42,13 +43,13 @@ t_prob = np.array( [[[1.0, 0.0, 0.0],
                       [0.0, 0.0, 0.0]]] )
 
 # only submit action takes to terminal state from each of the other states
-t_prob_terminal = np.array([[0,0,0],
+T_PROB_TERMINAL = np.array([[0,0,0],
                             [0,0,0],
                             [1,1,1]])
 
 # observation probabilities for each action
-e_prob =  np.array( [[[1.0-noise, noise, 0.0], 
-                    [noise, 1.0-noise, 0.0],
+E_PROB =  np.array( [[[1.0-NOISE, NOISE, 0.0], 
+                    [NOISE, 1.0-NOISE, 0.0],
                     [0.0, 0.0, 1.0]], 
                   
                    [[0.5, 0.5, 0.0], 
@@ -60,19 +61,18 @@ e_prob =  np.array( [[[1.0-noise, noise, 0.0],
                     [0.0, 0.0, 1.0]]] )
 
 # rewards for each action in each state
-rewards = np.array([[-0.1, -0.1, -0.1], 
+REWARDS = np.array([[-0.1, -0.1, -0.1], 
                     [-1.5, -1.5, -1.5], 
                     [0.0, 0.0, 5.0]])
 
 #%%
 
-# define value and policy variables in grid of belief states
-# represent the beliefs of first N-1 states (N: total number of states)
+# derive optimal policy 
 
 start = time.time()
 
-policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                          rewards, discount_factor, db, max_iter, eps)
+policy, value = pomdp_algms.get_optimal_policy_2D( STATES, ACTIONS, OBSERVATIONS, E_PROB, T_PROB,
+                          REWARDS, DISCOUNT_FACTOR, DB, MAX_ITER, EPS )
 
 end = time.time()
 print(f"time taken: {end-start}s")
@@ -98,14 +98,14 @@ initial_hidden_state = 0 #np.random.choice([0, 1], p = [0.5, 0.5])
 
 for i_run in range(50):
     
-    trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                             states, observations, e_prob, t_prob, t_prob_terminal)                                          
+    trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                             STATES, OBSERVATIONS, E_PROB, T_PROB, T_PROB_TERMINAL)                                          
     
     plt.plot( trajectory[2], marker = 'o', linestyle = '--' )
     
 plt.xlabel('timestep')
 plt.ylabel('action')
-plt.yticks(actions, labels=['check', 'work', 'submit'])
+plt.yticks(ACTIONS, labels=['check', 'work', 'submit'])
         
 #%%
 # final plots
@@ -116,9 +116,9 @@ policy_1d = np.flipud(policy).diagonal()
 plt.figure(figsize=(8,6), dpi=100)
 policy_1d=np.expand_dims(policy_1d, axis=0)
 plt.imshow(policy_1d, cmap=cmap)
-plt.xticks(ticks=[0, 0.5/db, 1/db], labels=[0., .5, 1.])
+plt.xticks(ticks=[0, 0.5/DB, 1/DB], labels=[0., .5, 1.])
 plt.yticks([0.0], ['policy'])
-plt.xlim([0,1/db])
+plt.xlim([0,1/DB])
 plt.xlabel('belief (S=1) ')
 sns.despine()
 
@@ -127,19 +127,19 @@ plt.savefig('writing/figures_thesis/vectors/pomdp_example_policy.svg',
 
 #%%
 
-# plot trajectory
+# plot trajectory for the two different initial states
+
 initial_belief = np.array( [0.5, 0.5, 0.0] )
 initial_hidden_state = 0 
-trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                         states, observations, e_prob, t_prob, t_prob_terminal)
+trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                         STATES, OBSERVATIONS, E_PROB, T_PROB, T_PROB_TERMINAL)
 trajectory_init_0 = trajectory
 
 initial_belief = np.array( [0.5, 0.5, 0.0] )
 initial_hidden_state = 1
-trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                         states, observations, e_prob, t_prob, t_prob_terminal)
+trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                         STATES, OBSERVATIONS, E_PROB, T_PROB, T_PROB_TERMINAL)
 trajectory_init_1 = trajectory
-
 
 plt.figure(figsize=(6,4), dpi=100)
 
@@ -177,7 +177,7 @@ plt.savefig('writing/figures_thesis/vectors/pomdp_example_trajectories.svg',
 
 #%%
 
-# average time of submission and correct submission rates
+# average time of submission and correct submission rates for varying final rewards
 
 rewards_compl = np.array( [2.0, 3.0, 5.0, 6.0, 7.0, 8.0] )
 submission_times = np.zeros((200, len(rewards_compl), 2))
@@ -189,8 +189,8 @@ for i_reward, reward in enumerate(rewards_compl):
                         [-1.5, -1.5, -1.5], 
                         [0.0, 0.0, reward]])
     
-    policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                              rewards, discount_factor, db, max_iter, eps)
+    policy, value = pomdp_algms.get_optimal_policy_2D(STATES, ACTIONS, OBSERVATIONS, E_PROB, T_PROB,
+                              rewards, DISCOUNT_FACTOR, DB, MAX_ITER, EPS)
         
     for i in range(200):
         
@@ -198,8 +198,8 @@ for i_reward, reward in enumerate(rewards_compl):
         
         for initial_hidden_state in range(2):    
             
-            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                                 states, observations, e_prob, t_prob, t_prob_terminal)  
+            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                                 STATES, OBSERVATIONS, E_PROB, T_PROB, T_PROB_TERMINAL)  
         
             submission_times[i, i_reward, initial_hidden_state] = len(trajectory[1])
         
@@ -262,7 +262,8 @@ plt.savefig('writing/figures_thesis/vectors/pomdp_reward.svg',
             format='svg', dpi=300)
 
 #%%
-# average time of submission and correct submission rates
+
+# average time of submission and correct submission rates for varying efficacys
 
 efficacys = np.array( [0.4, 0.5, 0.6, 0.7, 0.8, 0.9] )
 submission_times = np.zeros((200, len(efficacys), 2))
@@ -284,8 +285,8 @@ for i_efficacy, efficacy in enumerate(efficacys):
                           [0.0, 0.0, 0.0]]] )
 
     
-    policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                              rewards, discount_factor, db, max_iter, eps)
+    policy, value = pomdp_algms.get_optimal_policy_2D(STATES, ACTIONS, OBSERVATIONS, E_PROB, t_prob,
+                              REWARDS, DISCOUNT_FACTOR, DB, MAX_ITER, EPS)
         
     for i in range(200):
         
@@ -293,8 +294,8 @@ for i_efficacy, efficacy in enumerate(efficacys):
         
         for initial_hidden_state in range(2):    
             
-            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                                 states, observations, e_prob, t_prob, t_prob_terminal)  
+            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                                 STATES, OBSERVATIONS, E_PROB, t_prob, T_PROB_TERMINAL)  
         
             submission_times[i, i_efficacy, initial_hidden_state] = len(trajectory[1])
         
@@ -357,6 +358,9 @@ plt.savefig('writing/figures_thesis/vectors/pomdp_efficacy.svg',
             format='svg', dpi=300)
 
 #%%
+
+# average time of submission and correct submission rates for varying noise
+
 noises = np.array( [0.1, 0.2, 0.3, 0.4] )
 submission_times = np.zeros((200, len(noises), 2))
 correct_submissions = np.zeros((200, len(noises)))
@@ -377,8 +381,8 @@ for i_noise, noise in enumerate(noises):
                         [0.0, 0.0, 1.0]]] )
 
     
-    policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                              rewards, discount_factor, db, max_iter, eps)
+    policy, value = pomdp_algms.get_optimal_policy_2D(STATES, ACTIONS, OBSERVATIONS, e_prob, T_PROB,
+                              REWARDS, DISCOUNT_FACTOR, DB, MAX_ITER, EPS)
         
     for i in range(200):
         
@@ -386,8 +390,8 @@ for i_noise, noise in enumerate(noises):
         
         for initial_hidden_state in range(2):    
             
-            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                                 states, observations, e_prob, t_prob, t_prob_terminal)  
+            trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                                 STATES, OBSERVATIONS, e_prob, T_PROB, T_PROB_TERMINAL)  
         
             submission_times[i, i_noise, initial_hidden_state] = len(trajectory[1])
         
@@ -450,12 +454,14 @@ plt.savefig('writing/figures_thesis/vectors/pomdp_noise.svg',
 
 #%%
 
+# average time of submission and correct submission rates for varying priors
+
 priors = np.linspace(0.2, 0.9, 30)
 submission_times = np.zeros((1000, len(priors)))
 correct_submissions = np.full((1000, len(priors)), np.nan)
 efficacy = 0.8
-policy, value = pomdp_algms.get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
-                          rewards, discount_factor, db, max_iter, eps)
+policy, value = pomdp_algms.get_optimal_policy_2D(STATES, ACTIONS, OBSERVATIONS, E_PROB, T_PROB,
+                          REWARDS, DISCOUNT_FACTOR, DB, MAX_ITER, EPS)
 
 for i_prior, prior in enumerate(priors):
         
@@ -465,8 +471,8 @@ for i_prior, prior in enumerate(priors):
         
         initial_hidden_state = np.random.choice([0, 1], p = [0.6, 0.4])   
             
-        trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, db, 
-                                             states, observations, e_prob, t_prob, t_prob_terminal)  
+        trajectory = pomdp_algms.forward_runs_2D(initial_belief, initial_hidden_state, policy, DB, 
+                                             STATES, OBSERVATIONS, E_PROB, T_PROB, T_PROB_TERMINAL)  
     
         submission_times[i, i_prior] = len(trajectory[1])
     

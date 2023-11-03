@@ -1,3 +1,13 @@
+"""
+script contains functions for algorithms used to find optimal policy in POMDPs
+The algorithms are numeric and based on dynamic programming. They follow a grid-based method
+to discretise belief space (rbitrary grid size) associated with a finite set of partially-observable states.
+The value function is interpolated on-the-fly between the discrete belief states for the Bellman update
+
+Alternative method: pre-calculate a transition matrix between discrete belief states
+by interpolation (YET TO IMPLEMENT)
+"""
+
 import math
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator
@@ -10,15 +20,21 @@ def pO_ba(belief, action, observation, e_prob, t_prob):
 
 def get_next_belief(belief, action, observation, e_prob, t_prob):
     """
-    finding the next belief state given belief, action and observation
+    finding the next belief state given belief, action and observation using bayes rule
     """
     return (e_prob[action][:, observation] * (t_prob[action].T @ belief)) / (
            pO_ba(belief, action, observation, e_prob, t_prob) )
 
 def round_down(num, dx):
+    """
+    rounding down a number to precision of six decimal spaces
+    """
     return math.floor( np.round(num / dx, 6) ) * dx
 
 def round_up(num, dx):
+    """
+    rounding up a number to precision of six decimal spaces
+    """
     return math.ceil( np.round(num / dx, 6) ) * dx
 
 def interpolate1d(x, x_0, x_1, dx, func_0, func_1):
@@ -43,6 +59,7 @@ def interpolate_triangle(x, x1, x2, x3, y, y1, y2, y3,
                         func1, func2, func3):
     """
     interpolate on a 2d triangle using barycentric coordinates (weights)
+    this is necessary at the edge of belief space simplex
     three vertices: (x1, y1), (x2,y2), (x3,y3)
     point to interpolate on: (x, y)
     """
@@ -107,7 +124,7 @@ def interpolate_policy(belief, policy, db):
 def forward_runs_2D(belief, hidden_state, policy, db, states, observations,
                  e_prob, t_prob, t_prob_terminal):
     """
-    sample trajectories given initial beleif, hidden_state and policy
+    sample trajectories given initial beleif, hidden state and policy
     """
     belief_trajectory = []  
     state_trajectory = []
@@ -146,7 +163,7 @@ def get_optimal_policy_2D(states, actions, observations, e_prob, t_prob,
                           db, max_iter, eps):
     
     """
-    derive optimal policy giiven problem description for a case with 3 states
+    derive optimal policy given problem description for a case with 3 states
     and hence 2D belief space.
     if there is a terminal state, then include only the probability of transitioning
     to non-terminal states in the t_prob (and other matrices)

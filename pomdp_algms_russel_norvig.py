@@ -3,10 +3,10 @@ MDP algorithms from Russel and Norvig's AI textbook. Without Grid_MDP class
 """
 import random
 from collections import defaultdict
-
 import numpy as np
 
 # 16.4 Partially Observed MDPs
+
 
 class POMDP:
     """A Partially Observable Markov Decision Process, defined by
@@ -16,7 +16,8 @@ class POMDP:
     are defined as matrices. We also keep track of the possible states
     and actions for each state. [Page 659]."""
 
-    def __init__(self, actions, transitions=None, evidences=None, rewards=None, states=None, gamma=0.95):
+    def __init__(self, actions, transitions=None, evidences=None,
+                 rewards=None, states=None, gamma=0.95):
         """Initialize variables of the pomdp"""
 
         if not (0 < gamma <= 1):
@@ -45,7 +46,8 @@ class POMDP:
         upper surface and removes those which don't.
         """
 
-        values = [val for action in input_values for val in input_values[action]]
+        values = [val for action in input_values for val in
+                  input_values[action]]
         values.sort(key=lambda x: x[0], reverse=True)
 
         best = [values[0]]
@@ -53,15 +55,23 @@ class POMDP:
         tgt = values[0]
         prev_b = 0
         prev_ix = 0
+
         while tgt[1] != y1_max:
             min_b = 1
             min_ix = 0
+
             for i in range(prev_ix + 1, len(values)):
+
                 if values[i][0] - tgt[0] + tgt[1] - values[i][1] != 0:
-                    trans_b = (values[i][0] - tgt[0]) / (values[i][0] - tgt[0] + tgt[1] - values[i][1])
-                    if 0 <= trans_b <= 1 and trans_b > prev_b and trans_b < min_b:
+                    trans_b = ((values[i][0] - tgt[0])
+                               / (values[i][0] - tgt[0]
+                                  + tgt[1] - values[i][1]))
+
+                    if (0 <= trans_b <= 1 and trans_b > prev_b
+                            and trans_b < min_b):
                         min_b = trans_b
                         min_ix = i
+
             prev_b = min_b
             prev_ix = min_ix
             tgt = values[min_ix]
@@ -76,7 +86,8 @@ class POMDP:
         finds the maximum values at these points.
         """
 
-        values = [val for action in input_values for val in input_values[action]]
+        values = [val for action in input_values for val
+                  in input_values[action]]
         values.sort(key=lambda x: x[0], reverse=True)
 
         best = []
@@ -161,7 +172,8 @@ class Matrix:
     def matmul(A, B):
         """Inner-product of two matrices"""
 
-        return [[sum(ele_a * ele_b for ele_a, ele_b in zip(row_a, col_b)) for col_b in list(zip(*B))] for row_a in A]
+        return [[sum(ele_a * ele_b for ele_a, ele_b in zip(row_a, col_b))
+                 for col_b in list(zip(*B))] for row_a in A]
 
     @staticmethod
     def transpose(A):
@@ -175,36 +187,45 @@ def pomdp_value_iteration(pomdp, epsilon=0.1):
 
     U = {'': [[0] * len(pomdp.states)]}
     count = 0
+
     while True:
         count += 1
         prev_U = U
         values = [val for action in U for val in U[action]]
         value_matxs = []
+
         for i in values:
             for j in values:
                 value_matxs.append([i, j])
 
         U1 = defaultdict(list)
+
         for action in pomdp.actions:
             for u in value_matxs:
-                u1 = Matrix.matmul(Matrix.matmul(pomdp.t_prob[int(action)],
-                                                 Matrix.multiply(pomdp.e_prob[int(action)], Matrix.transpose(u))),
-                                   [[1], [1]])
-                u1 = Matrix.add(Matrix.scalar_multiply(pomdp.gamma, Matrix.transpose(u1)), [pomdp.rewards[int(action)]])
+                u1 = Matrix.matmul(Matrix.matmul(
+                    pomdp.t_prob[int(action)],
+                    Matrix.multiply(pomdp.e_prob[int(action)],
+                                    Matrix.transpose(u))), [[1], [1]])
+                u1 = Matrix.add(Matrix.scalar_multiply(
+                    pomdp.gamma, Matrix.transpose(u1)),
+                    [pomdp.rewards[int(action)]])
                 U1[action].append(u1[0])
 
+        # replace with U = pomdp.remove_dominated_plans(U1) for accurate
+        # calculations
         U = pomdp.remove_dominated_plans_fast(U1)
-        # replace with U = pomdp.remove_dominated_plans(U1) for accurate calculations
 
         if count > 10:
-            if pomdp.max_difference(U, prev_U) < epsilon * (1 - pomdp.gamma) / pomdp.gamma:
+            if (pomdp.max_difference(U, prev_U) < epsilon * (1 - pomdp.gamma)
+                    / pomdp.gamma):
                 return U
-            
+
+
 def get_regions(self, input_values):
     """
     Based on Remove dominated plans.
     This method finds and runs thrugh the lines contributing to the
-    upper surface and returns the intersection belief points along with the 
+    upper surface and returns the intersection belief points along with the
     corresponding actions and utility lines
     """
 
@@ -217,22 +238,28 @@ def get_regions(self, input_values):
     tgt = values[0]
     prev_b = 0
     prev_ix = 0
+
     while tgt[1] != y1_max:
         min_b = 1
         min_ix = 0
+
         for i in range(prev_ix + 1, len(values)):
+
             if values[i][0] - tgt[0] + tgt[1] - values[i][1] != 0:
-                trans_b = (values[i][0] - tgt[0]) / (values[i][0] - tgt[0] + tgt[1] - values[i][1])
+                trans_b = ((values[i][0] - tgt[0])
+                           / (values[i][0] - tgt[0] + tgt[1] - values[i][1]))
+
                 if 0 <= trans_b <= 1 and trans_b > prev_b and trans_b < min_b:
                     min_b = trans_b
                     min_ix = i
+
         prev_b = min_b
         prev_ix = min_ix
         tgt = values[min_ix]
         best.append(tgt)
         intersections.append(min_b)
     intersections.append(1.0)
-        
+
     actions = []
     utilities = []
     for value in best:
@@ -242,6 +269,7 @@ def get_regions(self, input_values):
                 utilities.append(value)
 
     return intersections, actions, utilities
+
 
 __doc__ += """
 >>> pi = best_policy(sequential_decision_environment, value_iteration(sequential_decision_environment, .01))

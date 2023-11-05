@@ -8,54 +8,72 @@ import random
 import numpy as np
 import sys
 
+
 class TigerState(pomdp_py.State):
     def __init__(self, name):
         self.name = name
+
     def __hash__(self):
         return hash(self.name)
+
     def __eq__(self, other):
         if isinstance(other, TigerState):
             return self.name == other.name
         return False
+
     def __str__(self):
         return self.name
+
     def __repr__(self):
         return "TigerState(%s)" % self.name
+
     def other(self):
         if self.name.endswith("left"):
             return TigerState("tiger-right")
         else:
             return TigerState("tiger-left")
 
+
 class TigerAction(pomdp_py.Action):
     def __init__(self, name):
         self.name = name
+
     def __hash__(self):
         return hash(self.name)
+
     def __eq__(self, other):
         if isinstance(other, TigerAction):
             return self.name == other.name
         return False
+
     def __str__(self):
         return self.name
+
     def __repr__(self):
         return "TigerAction(%s)" % self.name
+
 
 class TigerObservation(pomdp_py.Observation):
     def __init__(self, name):
         self.name = name
+
     def __hash__(self):
         return hash(self.name)
+
     def __eq__(self, other):
         if isinstance(other, TigerObservation):
             return self.name == other.name
         return False
+
     def __str__(self):
         return self.name
+
     def __repr__(self):
         return "TigerAction(%s)" % self.name
-    
+
 # Observation model
+
+
 class ObservationModel(pomdp_py.ObservationModel):
     def __init__(self, noise=0.15):
         self.noise = noise
@@ -76,7 +94,7 @@ class ObservationModel(pomdp_py.ObservationModel):
         else:
             thresh = 0.5
 
-        if random.uniform(0,1) < thresh:
+        if random.uniform(0, 1) < thresh:
             return TigerObservation(next_state.name)
         else:
             return TigerObservation(next_state.other().name)
@@ -89,6 +107,8 @@ class ObservationModel(pomdp_py.ObservationModel):
                 for s in {"tiger-left", "tiger-right"}]
 
 # Transition Model
+
+
 class TransitionModel(pomdp_py.TransitionModel):
     def probability(self, next_state, state, action):
         """According to problem spec, the world resets once
@@ -108,11 +128,16 @@ class TransitionModel(pomdp_py.TransitionModel):
             return TigerState(state.name)
 
     def get_all_states(self):
-        """Only need to implement this if you're using
-        a solver that needs to enumerate over the observation space (e.g. value iteration)"""
+        """
+        Only need to implement this if you're using
+        a solver that needs to enumerate over the observation space (e.g.
+        value iteration)
+        """
         return [TigerState(s) for s in {"tiger-left", "tiger-right"}]
 
 # Reward Model
+
+
 class RewardModel(pomdp_py.RewardModel):
     def _reward_func(self, state, action):
         if action.name == "open-left":
@@ -125,7 +150,7 @@ class RewardModel(pomdp_py.RewardModel):
                 return 10
             else:
                 return -100
-        else: # listen
+        else:  # listen
             return -1
 
     def sample(self, state, action, next_state):
@@ -133,11 +158,14 @@ class RewardModel(pomdp_py.RewardModel):
         return self._reward_func(state, action)
 
 # Policy Model
+
+
 class PolicyModel(pomdp_py.RolloutPolicy):
-    """A simple policy model with uniform prior over a
-       small, finite action space"""
+    """
+    A simple policy model with uniform prior over a small, finite action space
+    """
     ACTIONS = [TigerAction(s)
-              for s in {"open-left", "open-right", "listen"}]
+               for s in {"open-left", "open-right", "listen"}]
 
     def sample(self, state):
         return random.sample(self.get_all_actions(), 1)[0]
